@@ -1,0 +1,166 @@
+<?php
+
+namespace App\Controllers\Petugas;
+
+use App\Controllers\BaseController;
+use App\Libraries\JmfService;
+
+class Checkin extends BaseController
+{
+    public function index()
+    {
+        $event = $this->activeEvent;
+        $stats = [
+            'total_terdaftar' => 0,
+            'total_hadir'     => 0,
+        ];
+        $sesiStats = [];
+        $recentCheckin = [];
+
+        if ($event) {
+            $stats['total_terdaftar'] = (int) $this->db->table('event_peserta')->where('event_id', $event['id'])->countAllResults();
+            $stats['total_hadir']     = (int) $this->db->table('event_peserta')->where('event_id', $event['id'])->where('checkin_at IS NOT NULL')->countAllResults();
+
+            if (! empty($event['sesi_aktif'])) {
+                $sesiStats = $this->db->query("
+                    SELECT s.*,
+                           COUNT(ep.id) AS terdaftar,
+                           SUM(CASE WHEN ep.checkin_at IS NOT NULL THEN 1 ELSE 0 END) AS hadir
+                    FROM event_sesi s
+                    LEFT JOIN event_peserta ep ON ep.sesi_id = s.id
+                    WHERE s.event_id = ?
+                    GROUP BY s.id
+                    ORDER BY s.urutan ASC
+                ", [$event['id']])->getResultArray();
+            }
+
+            $recentCheckin = $this->db->query("
+                SELECT ep.no_registrasi, ep.checkin_at, ep.checkin_luar_sesi, pck.nik, pck.nama, s.nama AS nama_sesi
+                FROM event_peserta ep
+                JOIN pencaker pck ON pck.id = ep.pencaker_id
+                LEFT JOIN event_sesi s ON s.id = ep.sesi_id
+                WHERE ep.event_id = ? AND ep.checkin_at IS NOT NULL
+                ORDER BY ep.checkin_at DESC
+                LIMIT 10
+            ", [$event['id']])->getResultArray();
+        }
+
+        return $this->renderView('petugas/scanner', [
+            'title'         => 'Meja Registrasi & Scanner Check-in Peserta',
+            'stats'         => $stats,
+            'sesiStats'     => $sesiStats,
+            'recentCheckin' => $recentCheckin,
+        ]);
+    }
+
+    public function verify()
+    {
+        $kode = trim((string) $this->request->getPost('kode'));
+        $event = $this->activeEvent;
+        if (! $event) {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Tidak ada event aktif.']);
+        }
+
+        $row = $this->db->table('event_peserta ep')
+            ->select('ep.*, pck.nik, pck.nama, pck.pendidikan, pck.jurusan, pck.hp, pck.foto, pck.profil_lengkap, pck.link_berkas, s.id AS s_id, s.nama AS nama_sesi, s.tanggal AS tgl_sesi, s.jam_mulai, s.jam_selesai')
+            ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+            ->join('event_sesi s', 's.id = ep.sesi_id', 'left')
+            ->where('ep.event_id', $event['id'])
+            ->groupStart()
+                ->where('ep.qr_token', $kode)
+                ->orWhere('ep.no_registrasi', $kode)
+                ->orWhere('pck.nik', $kode)
+            ->groupEnd()
+            ->get()
+            ->getRowArray();
+
+        if (! $row) {
+            return $this->response->setJSON(['ok' => false, 'msg' => 'Data peserta dengan QR / NIK "' . esc($kode) . '" tidak ditemukan pada event aktif.']);
+        }
+
+        $sesiObj = $row['s_id'] ? [
+            'id'          => $row['s_id'],
+            'nama'        => $row['nama_sesi'],
+            'tanggal'     => $row['tgl_sesi'],
+            'jam_mulai'   => $row['jam_mulai'],
+            'jam_selesai' => $row['jam_selesai'],
+        ] : null;
+
+        $evalSesi = JmfService::evaluateSesiStatus($event, $sesiObj);
+
+        return $this->response->setJSON([
+            'ok'       => true,
+            'peserta'  => $row,
+            'evalSesi' => $evalSesi,
+            'fotoUrl'  => ! empty($row['foto']) ? base_url('media/foto/' . $row['foto']) : null,
+            'csrfHash' => csrf_hash(),
+        ]);
+    }
+
+    public function confirm()
+    {
+        $pesertaId = (int) $this->request->getPost('event_peserta_id');
+        $event = $this->activeEvent;
+
+        $row = $this->db->table('event_peserta ep')
+            ->select('ep.*, pck.nama, s.id AS s_id, s.nama AS nama_sesi, s.tanggal AS tgl_sesi, s.jam_mulai, s.jam_selesai')
+            ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+            ->join('event_sesi s', 's.id = ep.sesi_id', 'left')
+            ->where('ep.id', $pesertaId)
+            ->get()
+            ->getRowArray();
+
+        if (! $row) {
+            return redirect()->to('/petugas')->with('error', 'Peserta tidak ditemukan.');
+        }
+
+        if (! empty($row['checkin_at'])) {
+            return redirect()->to('/petugas')->with('error', 'Peserta ' . $row['nama'] . ' sudah tercatat Check-in sebelumnya pada ' . $row['checkin_at']);
+        }
+
+        $sesiObj = $row['s_id'] ? [
+            'id'          => $row['s_id'],
+            'nama'        => $row['nama_sesi'],
+            'tanggal'     => $row['tgl_sesi'],
+            'jam_mulai'   => $row['jam_mulai'],
+            'jam_selesai' => $row['jam_selesai'],
+        ] : null;
+
+        $evalSesi = JmfService::evaluateSesiStatus($event, $sesiObj);
+        if (! $evalSesi['allowed']) {
+            return redirect()->to('/petugas')->with('error', 'Check-in Ditolak: ' . $evalSesi['label'] . ' (Aturan event menolak peserta di luar jam sesi).');
+        }
+
+        $this->db->table('event_peserta')->where('id', $pesertaId)->update([
+            'checkin_at'        => date('Y-m-d H:i:s'),
+            'checkin_by'        => session()->get('user_id'),
+            'checkin_luar_sesi' => $evalSesi['luar'],
+            'updated_at'        => date('Y-m-d H:i:s'),
+        ]);
+
+        return redirect()->to('/petugas')->with('success', 'Check-in BERHASIL untuk peserta: ' . $row['nama'] . ' (' . $row['no_registrasi'] . ').');
+    }
+
+    public function cari()
+    {
+        $q = trim((string) $this->request->getGet('q'));
+        $event = $this->activeEvent;
+        $results = [];
+        if ($event && strlen($q) >= 3) {
+            $results = $this->db->table('event_peserta ep')
+                ->select('ep.id, ep.no_registrasi, ep.qr_token, ep.checkin_at, pck.nik, pck.nama, s.nama AS nama_sesi')
+                ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+                ->join('event_sesi s', 's.id = ep.sesi_id', 'left')
+                ->where('ep.event_id', $event['id'])
+                ->groupStart()
+                    ->like('pck.nama', $q)
+                    ->orLike('pck.nik', $q)
+                    ->orLike('ep.no_registrasi', $q)
+                ->groupEnd()
+                ->limit(15)
+                ->get()
+                ->getResultArray();
+        }
+        return $this->response->setJSON($results);
+    }
+}
