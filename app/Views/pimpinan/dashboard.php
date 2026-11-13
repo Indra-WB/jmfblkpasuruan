@@ -54,23 +54,39 @@
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-lg-6">
+    <div class="col-lg-4">
         <div class="card stat-card h-100">
             <div class="card-header bg-white py-3">
                 <h6 class="fw-bold mb-0">Grafik Terdaftar vs Hadir per Sesi Kedatangan</h6>
             </div>
-            <div class="card-body">
-                <canvas id="chartSesi" height="210"></canvas>
+            <div class="card-body d-flex align-items-center">
+                <div class="w-100" style="position: relative; height: 220px;">
+                    <canvas id="chartSesi"></canvas>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-6">
+    <div class="col-lg-4">
         <div class="card stat-card h-100">
             <div class="card-header bg-white py-3">
                 <h6 class="fw-bold mb-0">Distribusi Pendidikan Pencari Kerja</h6>
             </div>
-            <div class="card-body">
-                <canvas id="chartPendidikan" height="210"></canvas>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="w-100" style="position: relative; height: 220px;">
+                    <canvas id="chartPendidikan"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card stat-card h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="fw-bold mb-0">Grafik Pelamar vs Diterima</h6>
+            </div>
+            <div class="card-body d-flex align-items-center">
+                <div class="w-100" style="position: relative; height: 220px;">
+                    <canvas id="chartPelamarDiterima"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -121,7 +137,7 @@
     const sesiData = <?= json_encode($stats['perSesi'] ?? []) ?>;
     const pendData = <?= json_encode($stats['demoPendidikan'] ?? []) ?>;
 
-    new Chart(document.getElementById('chartSesi'), {
+    const chartSesi = new Chart(document.getElementById('chartSesi'), {
         type: 'bar',
         data: {
             labels: sesiData.map(s => s.nama),
@@ -129,10 +145,15 @@
                 { label: 'Terdaftar', data: sesiData.map(s => s.terdaftar), backgroundColor: '#3b82f6' },
                 { label: 'Hadir (Check-in)', data: sesiData.map(s => s.hadir), backgroundColor: '#16a34a' }
             ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
         }
     });
 
-    new Chart(document.getElementById('chartPendidikan'), {
+    const chartPendidikan = new Chart(document.getElementById('chartPendidikan'), {
         type: 'doughnut',
         data: {
             labels: pendData.map(p => p.pendidikan),
@@ -140,10 +161,41 @@
                 data: pendData.map(p => p.jml),
                 backgroundColor: ['#1d4ed8','#0284c7','#16a34a','#ca8a04','#dc2626','#9333ea','#64748b']
             }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right' }
+            }
         }
     });
 
-    // Auto-refresh numbers every 15s
+    const chartPelamarDiterima = new Chart(document.getElementById('chartPelamarDiterima'), {
+        type: 'bar',
+        data: {
+            labels: ['Total Pelamar (Lamaran)', 'Total Diterima Kerja'],
+            datasets: [{
+                label: 'Jumlah Orang',
+                data: [<?= (int) ($stats['totalLamaran'] ?? 0) ?>, <?= (int) ($stats['totalDiterima'] ?? 0) ?>],
+                backgroundColor: ['#0284c7', '#16a34a'],
+                borderRadius: 6,
+                barPercentage: 0.55
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+
+    // Auto-refresh numbers & charts every 15s
     setInterval(function() {
         $.getJSON('<?= base_url('pimpinan/realtime-stats') ?>', function(res) {
             if (!res.ok) return;
@@ -155,6 +207,9 @@
             $('#stKuota').text(s.totalKuota);
             $('#stLamaran').text(s.totalLamaran);
             $('#stDiterima').text(s.totalDiterima);
+
+            chartPelamarDiterima.data.datasets[0].data = [s.totalLamaran, s.totalDiterima];
+            chartPelamarDiterima.update();
         });
     }, 15000);
 </script>
