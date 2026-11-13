@@ -44,7 +44,8 @@
     <div class="col-lg-8">
         <div class="card stat-card p-4">
             <h5 class="fw-bold mb-2">Pusat Kendali Panitia Job Market Fair UPT BLK Pasuruan</h5>
-            <p class="small text-muted mb-3">Gunakan pintasan di bawah ini untuk mengelola seluruh kegiatan mulai persiapan, pelaksanaan hari-H, hingga evaluasi penempatan:</p>
+            <p class="small text-muted mb-3">Gunakan pintasan di bawah ini untuk mengelola seluruh kegiatan mulai
+                persiapan, pelaksanaan hari-H, hingga evaluasi penempatan:</p>
             <div class="row g-2">
                 <div class="col-sm-6 col-md-4">
                     <a href="<?= base_url('admin/events') ?>" class="btn btn-outline-primary w-100 text-start p-3">
@@ -78,7 +79,7 @@
                     <a href="<?= base_url('pimpinan') ?>" class="btn btn-outline-info w-100 text-start p-3">
                         <i class="bi bi-broadcast fs-4 d-block mb-1"></i>
                         <strong>Monitor Real-Time</strong>
-                        <small class="d-block text-muted">Layar grafik statistik hari-H</small>
+                        <small class="d-block text-muted">Layar grafik statistik pada hari-H</small>
                     </a>
                 </div>
                 <div class="col-sm-6 col-md-4">
@@ -94,13 +95,17 @@
 
     <div class="col-lg-4">
         <div class="card stat-card p-4">
-            <h6 class="fw-bold mb-2"><i class="bi bi-envelope-paper text-primary me-1"></i> Status Antrean Email Notifikasi</h6>
-            <p class="small text-muted mb-3">Terdapat <strong><?= $stats['email_antre'] ?> email</strong> dalam antrean kirim.</p>
+            <h6 class="fw-bold mb-2"><i class="bi bi-envelope-paper text-primary me-1"></i> Status Antrean Email
+                Notifikasi</h6>
+            <p class="small text-muted mb-3">Terdapat <strong><?= $stats['email_antre'] ?> email</strong> dalam antrean
+                kirim.</p>
             <form method="post" action="<?= base_url('admin/email/proses') ?>">
                 <?= csrf_field() ?>
-                <button type="submit" class="btn btn-primary btn-sm w-100 mb-2"><i class="bi bi-send me-1"></i> Proses Kirim Antrean Sekarang</button>
+                <button type="submit" class="btn btn-primary btn-sm w-100 mb-2"><i class="bi bi-send me-1"></i> Proses
+                    Kirim Antrean Sekarang</button>
             </form>
-            <a href="<?= base_url('admin/pengaturan') ?>" class="btn btn-outline-secondary btn-sm w-100">Konfigurasi SMTP Email (`jmf@uptblkpasuruan.com`)</a>
+            <a href="<?= base_url('admin/pengaturan') ?>" class="btn btn-outline-secondary btn-sm w-100">Konfigurasi
+                SMTP Email (`jmf@uptblkpasuruan.com`)</a>
         </div>
     </div>
 </div>

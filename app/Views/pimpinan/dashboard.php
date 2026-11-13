@@ -4,12 +4,16 @@
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div class="small text-muted">
         <span class="badge bg-success me-1"><i class="bi bi-broadcast"></i> LIVE</span>
-        Pembaruan otomatis setiap 15 detik &bull; Terakhir diperbarui: <strong id="lblLastUpdate"><?= date('H:i:s') ?></strong>
+        Pembaruan otomatis setiap 15 detik &bull; Terakhir diperbarui: <strong
+            id="lblLastUpdate"><?= date('H:i:s') ?></strong>
     </div>
     <div class="d-flex gap-2">
-        <a href="<?= base_url('pimpinan/laporan') ?>" class="btn btn-sm btn-primary"><i class="bi bi-table me-1"></i> Detail Laporan</a>
-        <a href="<?= base_url('pimpinan/laporan/pdf/lengkap') ?>" target="_blank" class="btn btn-sm btn-danger"><i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF Berkop BLK</a>
-        <a href="<?= base_url('pimpinan/laporan/excel/lengkap') ?>" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-excel me-1"></i> Export Excel</a>
+        <a href="<?= base_url('pimpinan/laporan') ?>" class="btn btn-sm btn-primary"><i class="bi bi-table me-1"></i>
+            Detail Laporan</a>
+        <a href="<?= base_url('pimpinan/laporan/pdf/lengkap') ?>" target="_blank" class="btn btn-sm btn-danger"><i
+                class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF Berkop BLK</a>
+        <a href="<?= base_url('pimpinan/laporan/excel/lengkap') ?>" class="btn btn-sm btn-success"><i
+                class="bi bi-file-earmark-excel me-1"></i> Export Excel</a>
     </div>
 </div>
 
@@ -18,7 +22,8 @@
     <div class="col-6 col-lg-2">
         <div class="card stat-card p-3">
             <div class="small text-muted">Pendaftar</div>
-            <h3 class="fw-bold text-primary mb-0" id="stPendaftar"><?= number_format($stats['totalPendaftar'] ?? 0) ?></h3>
+            <h3 class="fw-bold text-primary mb-0" id="stPendaftar"><?= number_format($stats['totalPendaftar'] ?? 0) ?>
+            </h3>
         </div>
     </div>
     <div class="col-6 col-lg-2">
@@ -116,12 +121,12 @@
                         <tr>
                             <td><span class="badge bg-primary"><?= esc($pr['no_booth']) ?></span></td>
                             <td class="fw-bold"><?= esc($pr['nama_perusahaan']) ?></td>
-                            <td class="text-center"><?= (int)$pr['jml_lowongan'] ?></td>
-                            <td class="text-center"><?= (int)$pr['total_kuota'] ?></td>
-                            <td class="text-center fw-bold text-primary"><?= (int)$pr['total_pelamar'] ?></td>
-                            <td class="text-center"><?= (int)$pr['lolos_berkas'] ?></td>
-                            <td class="text-center"><?= (int)$pr['panggil_tes'] ?></td>
-                            <td class="text-center fw-bold text-success table-success"><?= (int)$pr['diterima'] ?></td>
+                            <td class="text-center"><?= (int) $pr['jml_lowongan'] ?></td>
+                            <td class="text-center"><?= (int) $pr['total_kuota'] ?></td>
+                            <td class="text-center fw-bold text-primary"><?= (int) $pr['total_pelamar'] ?></td>
+                            <td class="text-center"><?= (int) $pr['lolos_berkas'] ?></td>
+                            <td class="text-center"><?= (int) $pr['panggil_tes'] ?></td>
+                            <td class="text-center fw-bold text-success table-success"><?= (int) $pr['diterima'] ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -159,7 +164,7 @@
             labels: pendData.map(p => p.pendidikan),
             datasets: [{
                 data: pendData.map(p => p.jml),
-                backgroundColor: ['#1d4ed8','#0284c7','#16a34a','#ca8a04','#dc2626','#9333ea','#64748b']
+                backgroundColor: ['#1d4ed8', '#0284c7', '#16a34a', '#ca8a04', '#dc2626', '#9333ea', '#64748b']
             }]
         },
         options: {
@@ -174,7 +179,7 @@
     const chartPelamarDiterima = new Chart(document.getElementById('chartPelamarDiterima'), {
         type: 'bar',
         data: {
-            labels: ['Total Pelamar (Lamaran)', 'Total Diterima Kerja'],
+            labels: ['Total Pelamar', 'Total Diterima Kerja'],
             datasets: [{
                 label: 'Jumlah Orang',
                 data: [<?= (int) ($stats['totalLamaran'] ?? 0) ?>, <?= (int) ($stats['totalDiterima'] ?? 0) ?>],
@@ -196,8 +201,8 @@
     });
 
     // Auto-refresh numbers & charts every 15s
-    setInterval(function() {
-        $.getJSON('<?= base_url('pimpinan/realtime-stats') ?>', function(res) {
+    setInterval(function () {
+        $.getJSON('<?= base_url('pimpinan/realtime-stats') ?>', function (res) {
             if (!res.ok) return;
             $('#lblLastUpdate').text(res.waktu);
             const s = res.stats;
