@@ -257,6 +257,7 @@ class Panel extends BaseController
     public function detailPelamar(int $lamaranId)
     {
         $ep = $this->getEventPerusahaan();
+        $p  = $this->getPerusahaan();
         $row = $this->db->table('lamaran l')
             ->select('l.*, low.jabatan, pck.*, u.email, d.nama AS nama_desa, k.nama AS nama_kecamatan')
             ->join('lowongan low', 'low.id = l.lowongan_id')
@@ -281,6 +282,7 @@ class Panel extends BaseController
         return $this->renderView('perusahaan/detail_pelamar', [
             'title'         => 'Detail Pelamar: ' . $row['nama'],
             'pelamar'       => $row,
+            'perusahaan'    => $p,
             'lamaranId'     => $lamaranId,
             'pengalaman'    => $pengalaman,
             'keahlian'      => $keahlian,
@@ -335,6 +337,11 @@ class Panel extends BaseController
             'user_id'     => session()->get('user_id'),
             'created_at'  => $now,
         ]);
+
+        $notifVia = (string) $this->request->getPost('notif_via');
+        if ($notifVia === 'wa') {
+            return redirect()->back()->with('success', 'Status pelamar berhasil diperbarui dan halaman notifikasi WhatsApp telah dibuka.');
+        }
 
         // Queue email notification to applicant
         $jadwalHtml = '';
