@@ -29,7 +29,7 @@ class Panel extends BaseController
         $sesiList = [];
         $qrSvg = null;
 
-        if ($event && ! empty($p['id'])) {
+        if ($event && !empty($p['id'])) {
             $kepesertaan = $this->db->table('event_peserta ep')
                 ->select('ep.*, s.nama AS nama_sesi, s.tanggal AS tgl_sesi, s.jam_mulai, s.jam_selesai')
                 ->join('event_sesi s', 's.id = ep.sesi_id', 'left')
@@ -42,7 +42,7 @@ class Panel extends BaseController
                 $qrSvg = JmfService::generateQrDataUri($kepesertaan['qr_token']);
             }
 
-            if (! empty($event['sesi_aktif'])) {
+            if (!empty($event['sesi_aktif'])) {
                 $sesiList = $this->db->query("
                     SELECT s.*, COUNT(ep.id) AS terisi
                     FROM event_sesi s
@@ -60,12 +60,12 @@ class Panel extends BaseController
         }
 
         return $this->renderView('pencaker/dashboard', [
-            'title'       => 'Dashboard Pencari Kerja',
-            'pencaker'    => $p,
+            'title' => 'Dashboard Pencari Kerja',
+            'pencaker' => $p,
             'kepesertaan' => $kepesertaan,
-            'sesiList'    => $sesiList,
-            'qrSvg'       => $qrSvg,
-            'jmlLamaran'  => $jmlLamaran,
+            'sesiList' => $sesiList,
+            'qrSvg' => $qrSvg,
+            'jmlLamaran' => $jmlLamaran,
         ]);
     }
 
@@ -74,20 +74,20 @@ class Panel extends BaseController
         $p = $this->getPencaker();
         $kecamatan = $this->db->table('kecamatan')->orderBy('nama', 'ASC')->get()->getResultArray();
         $desa = [];
-        if (! empty($p['kecamatan_id'])) {
+        if (!empty($p['kecamatan_id'])) {
             $desa = $this->db->table('desa')->where('kecamatan_id', $p['kecamatan_id'])->orderBy('nama', 'ASC')->get()->getResultArray();
         }
 
         $pengalaman = $this->db->table('pengalaman_kerja')->where('pencaker_id', $p['id'])->orderBy('tahun_mulai', 'DESC')->get()->getResultArray();
-        $keahlian   = $this->db->table('keahlian')->where('pencaker_id', $p['id'])->orderBy('tahun', 'DESC')->get()->getResultArray();
+        $keahlian = $this->db->table('keahlian')->where('pencaker_id', $p['id'])->orderBy('tahun', 'DESC')->get()->getResultArray();
 
         return $this->renderView('pencaker/profil', [
-            'title'      => 'Profil, Pas Foto & Link Berkas',
-            'pencaker'   => $p,
-            'kecamatan'  => $kecamatan,
-            'desa'       => $desa,
+            'title' => 'Profil, Pas Foto & Link Berkas',
+            'pencaker' => $p,
+            'kecamatan' => $kecamatan,
+            'desa' => $desa,
             'pengalaman' => $pengalaman,
-            'keahlian'   => $keahlian,
+            'keahlian' => $keahlian,
         ]);
     }
 
@@ -96,15 +96,15 @@ class Panel extends BaseController
         $p = $this->getPencaker();
         $linkBerkas = trim((string) $this->request->getPost('link_berkas'));
 
-        if ($linkBerkas === '' || ! str_starts_with(strtolower($linkBerkas), 'https://')) {
+        if ($linkBerkas === '' || !str_starts_with(strtolower($linkBerkas), 'https://')) {
             return redirect()->back()->withInput()->with('error', 'Link berkas gabungan PDF wajib diisi dan harus diawali dengan https:// (mis. link Google Drive).');
         }
 
         $domisili = $this->request->getPost('domisili') === 'luar' ? 'luar' : 'kab_pasuruan';
-        $desaId   = $domisili === 'kab_pasuruan' ? ((int) $this->request->getPost('desa_id') ?: null) : null;
+        $desaId = $domisili === 'kab_pasuruan' ? ((int) $this->request->getPost('desa_id') ?: null) : null;
         $kotaLuar = $domisili === 'luar' ? trim((string) $this->request->getPost('kota_luar')) : null;
 
-        if ($domisili === 'kab_pasuruan' && ! $desaId) {
+        if ($domisili === 'kab_pasuruan' && !$desaId) {
             return redirect()->back()->withInput()->with('error', 'Silakan pilih Kecamatan dan Desa/Kelurahan domisili Anda di Kabupaten Pasuruan.');
         }
         if ($domisili === 'luar' && empty($kotaLuar)) {
@@ -113,17 +113,17 @@ class Panel extends BaseController
 
         $fotoFilename = $p['foto'];
         $fileFoto = $this->request->getFile('foto');
-        if ($fileFoto && $fileFoto->isValid() && ! $fileFoto->hasMoved()) {
+        if ($fileFoto && $fileFoto->isValid() && !$fileFoto->hasMoved()) {
             $validRules = [
                 'foto' => [
-                    'rules'  => 'uploaded[foto]|is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png]|max_size[foto,1024]',
+                    'rules' => 'uploaded[foto]|is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png]|max_size[foto,1024]',
                     'errors' => [
                         'max_size' => 'Ukuran pas foto maksimal 1 MB (1024 KB).',
-                        'mime_in'  => 'Pas foto harus berformat JPG atau PNG.',
+                        'mime_in' => 'Pas foto harus berformat JPG atau PNG.',
                     ],
                 ],
             ];
-            if (! $this->validate($validRules)) {
+            if (!$this->validate($validRules)) {
                 return redirect()->back()->withInput()->with('error', implode(' ', $this->validator->getErrors()));
             }
 
@@ -141,43 +141,43 @@ class Panel extends BaseController
                 // Keep original if resize fails
             }
 
-            if (! empty($fotoFilename) && is_file($uploadDir . '/' . $fotoFilename)) {
+            if (!empty($fotoFilename) && is_file($uploadDir . '/' . $fotoFilename)) {
                 @unlink($uploadDir . '/' . $fotoFilename);
             }
             $fotoFilename = $newName;
         }
 
-        $nama        = trim((string) $this->request->getPost('nama'));
+        $nama = trim((string) $this->request->getPost('nama'));
         $tempatLahir = trim((string) $this->request->getPost('tempat_lahir'));
-        $tglLahir    = trim((string) $this->request->getPost('tgl_lahir'));
-        $alamat      = trim((string) $this->request->getPost('alamat'));
-        $hp          = trim((string) $this->request->getPost('hp'));
-        $pendidikan  = (string) $this->request->getPost('pendidikan');
-        $jurusan     = trim((string) $this->request->getPost('jurusan'));
+        $tglLahir = trim((string) $this->request->getPost('tgl_lahir'));
+        $alamat = trim((string) $this->request->getPost('alamat'));
+        $hp = trim((string) $this->request->getPost('hp'));
+        $pendidikan = (string) $this->request->getPost('pendidikan');
+        $jurusan = trim((string) $this->request->getPost('jurusan'));
         $disabilitas = $this->request->getPost('disabilitas') ? 1 : 0;
-        $jenisDis    = $disabilitas ? trim((string) $this->request->getPost('jenis_disabilitas')) : null;
+        $jenisDis = $disabilitas ? trim((string) $this->request->getPost('jenis_disabilitas')) : null;
 
         // Check completeness (basic data + link_berkas)
-        $lengkap = (! empty($nama) && ! empty($tempatLahir) && ! empty($tglLahir) && ! empty($alamat) && ! empty($hp) && ! empty($linkBerkas)) ? 1 : 0;
+        $lengkap = (!empty($nama) && !empty($tempatLahir) && !empty($tglLahir) && !empty($alamat) && !empty($hp) && !empty($linkBerkas)) ? 1 : 0;
 
         $this->db->table('pencaker')->where('id', $p['id'])->update([
-            'nama'              => $nama,
-            'tempat_lahir'      => $tempatLahir,
-            'tgl_lahir'         => $tglLahir ?: null,
-            'jk'                => $this->request->getPost('jk') === 'P' ? 'P' : 'L',
-            'alamat'            => $alamat,
-            'domisili'          => $domisili,
-            'desa_id'           => $desaId,
-            'kota_luar'         => $kotaLuar,
-            'hp'                => $hp,
-            'pendidikan'        => $pendidikan,
-            'jurusan'           => $jurusan,
-            'disabilitas'       => $disabilitas,
+            'nama' => $nama,
+            'tempat_lahir' => $tempatLahir,
+            'tgl_lahir' => $tglLahir ?: null,
+            'jk' => $this->request->getPost('jk') === 'P' ? 'P' : 'L',
+            'alamat' => $alamat,
+            'domisili' => $domisili,
+            'desa_id' => $desaId,
+            'kota_luar' => $kotaLuar,
+            'hp' => $hp,
+            'pendidikan' => $pendidikan,
+            'jurusan' => $jurusan,
+            'disabilitas' => $disabilitas,
             'jenis_disabilitas' => $jenisDis,
-            'foto'              => $fotoFilename,
-            'link_berkas'       => $linkBerkas,
-            'profil_lengkap'    => $lengkap,
-            'updated_at'        => date('Y-m-d H:i:s'),
+            'foto' => $fotoFilename,
+            'link_berkas' => $linkBerkas,
+            'profil_lengkap' => $lengkap,
+            'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
         $this->db->table('users')->where('id', $p['user_id'])->update(['nama' => $nama]);
@@ -190,12 +190,12 @@ class Panel extends BaseController
     {
         $p = $this->getPencaker();
         $this->db->table('pengalaman_kerja')->insert([
-            'pencaker_id'     => $p['id'],
+            'pencaker_id' => $p['id'],
             'nama_perusahaan' => trim((string) $this->request->getPost('nama_perusahaan')),
-            'jabatan'         => trim((string) $this->request->getPost('jabatan')),
-            'tahun_mulai'     => (int) $this->request->getPost('tahun_mulai'),
-            'tahun_selesai'   => trim((string) $this->request->getPost('tahun_selesai')) ?: 'Sekarang',
-            'created_at'      => date('Y-m-d H:i:s'),
+            'jabatan' => trim((string) $this->request->getPost('jabatan')),
+            'tahun_mulai' => (int) $this->request->getPost('tahun_mulai'),
+            'tahun_selesai' => trim((string) $this->request->getPost('tahun_selesai')) ?: 'Sekarang',
+            'created_at' => date('Y-m-d H:i:s'),
         ]);
         return redirect()->to('/pencaker/profil')->with('success', 'Riwayat pengalaman kerja ditambahkan.');
     }
@@ -212,11 +212,11 @@ class Panel extends BaseController
         $p = $this->getPencaker();
         $this->db->table('keahlian')->insert([
             'pencaker_id' => $p['id'],
-            'nama'        => trim((string) $this->request->getPost('nama')),
-            'penerbit'    => trim((string) $this->request->getPost('penerbit')),
-            'tahun'       => (int) $this->request->getPost('tahun'),
-            'alumni_blk'  => $this->request->getPost('alumni_blk') ? 1 : 0,
-            'created_at'  => date('Y-m-d H:i:s'),
+            'nama' => trim((string) $this->request->getPost('nama')),
+            'penerbit' => trim((string) $this->request->getPost('penerbit')),
+            'tahun' => (int) $this->request->getPost('tahun'),
+            'alumni_blk' => $this->request->getPost('alumni_blk') ? 1 : 0,
+            'created_at' => date('Y-m-d H:i:s'),
         ]);
         return redirect()->to('/pencaker/profil')->with('success', 'Data sertifikat/pelatihan ditambahkan.');
     }
@@ -233,7 +233,7 @@ class Panel extends BaseController
         $p = $this->getPencaker();
         $event = $this->activeEvent;
 
-        if (! $event || empty($event['pendaftaran_dibuka'])) {
+        if (!$event || empty($event['pendaftaran_dibuka'])) {
             return redirect()->to('/pencaker')->with('error', 'Pendaftaran event saat ini sedang ditutup.');
         }
 
@@ -256,11 +256,11 @@ class Panel extends BaseController
 
         $this->db->transBegin();
 
-        if (! empty($event['sesi_aktif'])) {
+        if (!empty($event['sesi_aktif'])) {
             $sesiId = (int) $this->request->getPost('sesi_id');
             // Lock session row to prevent race conditions exceeding quota
             $sesiRow = $this->db->query("SELECT * FROM event_sesi WHERE id = ? AND event_id = ? FOR UPDATE", [$sesiId, $event['id']])->getRowArray();
-            if (! $sesiRow) {
+            if (!$sesiRow) {
                 $this->db->transRollback();
                 return redirect()->to('/pencaker')->with('error', 'Silakan pilih sesi kedatangan yang valid.');
             }
@@ -278,13 +278,13 @@ class Panel extends BaseController
         $qrToken = 'PESERTA-' . $event['tahun'] . '-' . strtoupper(bin2hex(random_bytes(5)));
 
         $this->db->table('event_peserta')->insert([
-            'event_id'      => $event['id'],
-            'pencaker_id'   => $p['id'],
-            'sesi_id'       => $sesiId,
+            'event_id' => $event['id'],
+            'pencaker_id' => $p['id'],
+            'sesi_id' => $sesiId,
             'no_registrasi' => $noReg,
-            'qr_token'      => $qrToken,
-            'created_at'    => $now,
-            'updated_at'    => $now,
+            'qr_token' => $qrToken,
+            'created_at' => $now,
+            'updated_at' => $now,
         ]);
 
         $this->db->transCommit();
@@ -312,7 +312,7 @@ class Panel extends BaseController
     {
         $p = $this->getPencaker();
         $event = $this->activeEvent;
-        if (! $event || empty($event['sesi_aktif']) || empty($event['pendaftaran_dibuka'])) {
+        if (!$event || empty($event['sesi_aktif']) || empty($event['pendaftaran_dibuka'])) {
             return redirect()->to('/pencaker')->with('error', 'Perubahan sesi kedatangan tidak tersedia.');
         }
 
@@ -321,13 +321,13 @@ class Panel extends BaseController
         $this->db->transBegin();
 
         $peserta = $this->db->query("SELECT * FROM event_peserta WHERE event_id = ? AND pencaker_id = ? FOR UPDATE", [$event['id'], $p['id']])->getRowArray();
-        if (! $peserta || ! empty($peserta['checkin_at'])) {
+        if (!$peserta || !empty($peserta['checkin_at'])) {
             $this->db->transRollback();
             return redirect()->to('/pencaker')->with('error', 'Sesi tidak dapat diubah karena Anda sudah melakukan check-in.');
         }
 
         $sesiRow = $this->db->query("SELECT * FROM event_sesi WHERE id = ? AND event_id = ? FOR UPDATE", [$newSesiId, $event['id']])->getRowArray();
-        if (! $sesiRow) {
+        if (!$sesiRow) {
             $this->db->transRollback();
             return redirect()->to('/pencaker')->with('error', 'Sesi tujuan tidak valid.');
         }
@@ -339,7 +339,7 @@ class Panel extends BaseController
         }
 
         $this->db->table('event_peserta')->where('id', $peserta['id'])->update([
-            'sesi_id'    => $newSesiId,
+            'sesi_id' => $newSesiId,
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
@@ -361,13 +361,13 @@ class Panel extends BaseController
             ->get()
             ->getRowArray();
 
-        if (! $kepesertaan) {
+        if (!$kepesertaan) {
             return redirect()->to('/pencaker')->with('error', 'Anda belum terdaftar pada event aktif.');
         }
 
         $qrDataUri = JmfService::generateQrDataUri($kepesertaan['qr_token']);
         $fotoBase64 = null;
-        if (! empty($p['foto'])) {
+        if (!empty($p['foto'])) {
             $fotoPath = WRITEPATH . 'uploads/foto/' . basename($p['foto']);
             if (is_file($fotoPath)) {
                 $mime = mime_content_type($fotoPath) ?: 'image/jpeg';
@@ -376,12 +376,12 @@ class Panel extends BaseController
         }
 
         $html = view('pdf/kartu_peserta', [
-            'pengaturan'  => $this->pengaturan,
-            'event'       => $event,
-            'pencaker'    => $p,
+            'pengaturan' => $this->pengaturan,
+            'event' => $event,
+            'pencaker' => $p,
             'kepesertaan' => $kepesertaan,
-            'qrDataUri'   => $qrDataUri,
-            'fotoBase64'  => $fotoBase64,
+            'qrDataUri' => $qrDataUri,
+            'fotoBase64' => $fotoBase64,
         ]);
 
         return JmfService::renderPdf($html, 'Kartu-Peserta-' . $kepesertaan['no_registrasi'] . '.pdf', 'A5', 'portrait');
@@ -401,7 +401,7 @@ class Panel extends BaseController
         }
 
         return $this->renderView('pencaker/scan_booth', [
-            'title'     => 'Scan QR Booth Perusahaan',
+            'title' => 'Scan QR Booth Perusahaan',
             'boothList' => $boothList,
         ]);
     }
@@ -419,7 +419,7 @@ class Panel extends BaseController
             ->get()
             ->getRowArray();
 
-        if (! $ep) {
+        if (!$ep) {
             return redirect()->to('/pencaker/scan-booth')->with('error', 'Kode QR Booth tidak ditemukan atau tidak valid.');
         }
 
@@ -448,12 +448,12 @@ class Panel extends BaseController
             ->getResultArray();
 
         return $this->renderView('pencaker/lamar_booth', [
-            'title'           => 'Lamar di Booth ' . $ep['no_booth'] . ' - ' . $ep['nama_perusahaan'],
-            'pencaker'        => $p,
-            'ep'              => $ep,
-            'kepesertaan'     => $kepesertaan,
+            'title' => 'Lamar di Booth ' . $ep['no_booth'] . ' - ' . $ep['nama_perusahaan'],
+            'pencaker' => $p,
+            'ep' => $ep,
+            'kepesertaan' => $kepesertaan,
             'existingLamaran' => $existingLamaran,
-            'lowonganList'    => $lowonganList,
+            'lowonganList' => $lowonganList,
         ]);
     }
 
@@ -468,7 +468,7 @@ class Panel extends BaseController
             ->get()
             ->getRowArray();
 
-        if (! $ep || empty($ep['lamaran_dibuka'])) {
+        if (!$ep || empty($ep['lamaran_dibuka'])) {
             return redirect()->back()->with('error', 'Pengiriman lamaran sedang ditutup oleh panitia.');
         }
 
@@ -482,7 +482,7 @@ class Panel extends BaseController
             ->get()
             ->getRowArray();
 
-        if (! $kepesertaan) {
+        if (!$kepesertaan) {
             return redirect()->to('/pencaker')->with('error', 'Anda belum terdaftar pada event ini.');
         }
 
@@ -508,30 +508,30 @@ class Panel extends BaseController
             ->get()
             ->getRowArray();
 
-        if (! $low) {
-            return redirect()->back()->with('error', 'Silakan pilih jabatan lowongan yang valid.');
+        if (!$low) {
+            return redirect()->back()->with('error', 'Silakan pilih lowongan jabatan yang valid.');
         }
 
         $now = date('Y-m-d H:i:s');
         $this->db->transStart();
 
         $this->db->table('lamaran')->insert([
-            'event_peserta_id'    => $kepesertaan['id'],
-            'lowongan_id'         => $low['id'],
+            'event_peserta_id' => $kepesertaan['id'],
+            'lowongan_id' => $low['id'],
             'event_perusahaan_id' => $ep['id'],
-            'status'              => 'Dikirim',
-            'created_at'          => $now,
-            'updated_at'          => $now,
+            'status' => 'Dikirim',
+            'created_at' => $now,
+            'updated_at' => $now,
         ]);
         $lamaranId = $this->db->insertID();
 
         $this->db->table('lamaran_log')->insert([
-            'lamaran_id'  => $lamaranId,
+            'lamaran_id' => $lamaranId,
             'status_lama' => null,
             'status_baru' => 'Dikirim',
-            'catatan'     => 'Melamar melalui scan QR Booth ' . $ep['no_booth'],
-            'user_id'     => session()->get('user_id'),
-            'created_at'  => $now,
+            'catatan' => 'Melamar melalui scan QR Booth ' . $ep['no_booth'],
+            'user_id' => session()->get('user_id'),
+            'created_at' => $now,
         ]);
 
         $this->db->transComplete();
@@ -555,7 +555,7 @@ class Panel extends BaseController
         ", [$p['id'] ?? 0])->getResultArray();
 
         return $this->renderView('pencaker/lamaran', [
-            'title'   => 'Riwayat & Status Lamaran Saya',
+            'title' => 'Riwayat & Status Lamaran Saya',
             'lamaran' => $list,
         ]);
     }
@@ -583,7 +583,7 @@ class Panel extends BaseController
         }
 
         return $this->renderView('pencaker/survei', [
-            'title'      => 'Survei Kepuasan Peserta Job Market Fair',
+            'title' => 'Survei Kepuasan Peserta Job Market Fair',
             'pertanyaan' => $pertanyaan,
             'jawabanMap' => $jawabanMap,
         ]);
@@ -592,7 +592,7 @@ class Panel extends BaseController
     public function saveSurvei()
     {
         $event = $this->activeEvent;
-        if (! $event) {
+        if (!$event) {
             return redirect()->back();
         }
         $userId = (int) session()->get('user_id');
@@ -610,10 +610,10 @@ class Panel extends BaseController
             }
             $data = [
                 'pertanyaan_id' => $q['id'],
-                'user_id'       => $userId,
-                'nilai'         => $q['tipe'] === 'skala' ? (int) $val : null,
-                'jawaban_teks'  => $q['tipe'] === 'teks' ? trim((string) $val) : null,
-                'created_at'    => $now,
+                'user_id' => $userId,
+                'nilai' => $q['tipe'] === 'skala' ? (int) $val : null,
+                'jawaban_teks' => $q['tipe'] === 'teks' ? trim((string) $val) : null,
+                'created_at' => $now,
             ];
             $this->db->table('survei_jawaban')->replace($data);
         }

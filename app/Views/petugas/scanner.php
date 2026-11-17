@@ -1,23 +1,24 @@
 <?= $this->extend('layouts/panel') ?>
 
 <?= $this->section('content') ?>
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card stat-card p-3 border-start border-4 border-primary">
-            <div class="small text-muted">Total Peserta Terdaftar</div>
+<div class="row g-2 g-md-3 mb-4">
+    <div class="col-4">
+        <div class="card stat-card p-2 p-md-3 h-100 justify-content-between border-start border-4 border-primary">
+            <div class="small text-muted">Total Terdaftar</div>
             <h3 class="fw-bold mb-0"><?= number_format($stats['total_terdaftar']) ?></h3>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card stat-card p-3 border-start border-4 border-success">
-            <div class="small text-muted">Total Hadir (Sudah Check-in)</div>
+    <div class="col-4">
+        <div class="card stat-card p-2 p-md-3 h-100 justify-content-between border-start border-4 border-success">
+            <div class="small text-muted">Sudah Check-in</div>
             <h3 class="fw-bold text-success mb-0"><?= number_format($stats['total_hadir']) ?></h3>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card stat-card p-3 border-start border-4 border-warning">
+    <div class="col-4">
+        <div class="card stat-card p-2 p-md-3 h-100 justify-content-between border-start border-4 border-warning">
             <div class="small text-muted">Belum Check-in</div>
-            <h3 class="fw-bold text-warning mb-0"><?= number_format(max(0, $stats['total_terdaftar'] - $stats['total_hadir'])) ?></h3>
+            <h3 class="fw-bold text-warning mb-0">
+                <?= number_format(max(0, $stats['total_terdaftar'] - $stats['total_hadir'])) ?></h3>
         </div>
     </div>
 </div>
@@ -27,24 +28,29 @@
     <div class="col-lg-6">
         <div class="card stat-card mb-4">
             <div class="card-header bg-white py-3">
-                <h6 class="fw-bold mb-0"><i class="bi bi-qr-code-scan text-primary me-1"></i> Pemindai Kartu QR Peserta</h6>
+                <h6 class="fw-bold mb-0"><i class="bi bi-qr-code-scan text-primary me-1"></i> Pemindai Kartu QR Peserta
+                </h6>
             </div>
             <div class="card-body p-4">
-                <div id="qrReader" class="mx-auto border rounded-3 overflow-hidden mb-3" style="max-width: 350px;"></div>
+                <div id="qrReader" class="mx-auto border rounded-3 overflow-hidden mb-3" style="max-width: 350px;">
+                </div>
 
                 <form id="frmVerifyKode" class="row g-2 mb-3">
                     <div class="col-8">
-                        <input type="text" id="txtKode" class="form-control" placeholder="Ketik / Scan QR Token, No. Reg, atau NIK..." autofocus>
+                        <input type="text" id="txtKode" class="form-control"
+                            placeholder="Ketik / Scan QR Token, No. Reg, atau NIK..." autofocus>
                     </div>
                     <div class="col-4">
-                        <button type="submit" class="btn btn-primary w-100 fw-semibold"><i class="bi bi-search me-1"></i> Cek Peserta</button>
+                        <button type="submit" class="btn btn-primary w-100 fw-semibold"><i
+                                class="bi bi-search me-1"></i> Cek Peserta</button>
                     </div>
                 </form>
 
                 <!-- Hasil Verifikasi Peserta -->
                 <div id="boxResult" style="display:none;" class="border rounded-3 p-3 bg-light">
                     <div class="d-flex gap-3 align-items-center mb-3">
-                        <img id="resFoto" src="" style="width:70px;height:90px;object-fit:cover;display:none;" class="rounded border">
+                        <img id="resFoto" src="" style="width:70px;height:90px;object-fit:cover;display:none;"
+                            class="rounded border">
                         <div>
                             <span id="resNoReg" class="badge bg-primary mb-1"></span>
                             <h5 id="resNama" class="fw-bold mb-0"></h5>
@@ -69,11 +75,13 @@
         <!-- Pencarian Manual Nama / NIK -->
         <div class="card stat-card">
             <div class="card-header bg-white py-3">
-                <h6 class="fw-bold mb-0"><i class="bi bi-person-lines-fill text-secondary me-1"></i> Pencarian Manual (Jika HP Peserta Mati / QR Rusak)</h6>
+                <h6 class="fw-bold mb-0"><i class="bi bi-person-lines-fill text-secondary me-1"></i> Pencarian Manual
+                    (Jika HP Peserta Mati / QR Rusak)</h6>
             </div>
             <div class="card-body">
                 <div class="input-group mb-2">
-                    <input type="text" id="txtCariNama" class="form-control form-control-sm" placeholder="Ketik minimal 3 huruf Nama atau NIK...">
+                    <input type="text" id="txtCariNama" class="form-control form-control-sm"
+                        placeholder="Ketik minimal 3 huruf Nama atau NIK...">
                     <button type="button" id="btnCariNama" class="btn btn-sm btn-outline-primary">Cari</button>
                 </div>
                 <div id="listCariManual" class="list-group small"></div>
@@ -83,10 +91,11 @@
 
     <!-- Statistik per Sesi & Riwayat Check-in Terakhir -->
     <div class="col-lg-6">
-        <?php if (! empty($sesiStats)): ?>
+        <?php if (!empty($sesiStats)): ?>
             <div class="card stat-card mb-4">
                 <div class="card-header bg-white py-3">
-                    <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-info me-1"></i> Kehadiran Peserta per Sesi Kedatangan</h6>
+                    <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-info me-1"></i> Kehadiran Peserta per Sesi
+                        Kedatangan</h6>
                 </div>
                 <div class="card-body">
                     <table class="table table-sm align-middle mb-0">
@@ -103,10 +112,11 @@
                             <?php foreach ($sesiStats as $s): ?>
                                 <tr>
                                     <td class="fw-semibold"><?= esc($s['nama']) ?></td>
-                                    <td class="small"><?= substr($s['jam_mulai'],0,5) ?> - <?= substr($s['jam_selesai'],0,5) ?></td>
-                                    <td class="text-center"><?= (int)$s['kuota'] ?></td>
-                                    <td class="text-center"><?= (int)$s['terdaftar'] ?></td>
-                                    <td class="text-center fw-bold text-success"><?= (int)$s['hadir'] ?></td>
+                                    <td class="small"><?= substr($s['jam_mulai'], 0, 5) ?> - <?= substr($s['jam_selesai'], 0, 5) ?>
+                                    </td>
+                                    <td class="text-center"><?= (int) $s['kuota'] ?></td>
+                                    <td class="text-center"><?= (int) $s['terdaftar'] ?></td>
+                                    <td class="text-center fw-bold text-success"><?= (int) $s['hadir'] ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -117,7 +127,8 @@
 
         <div class="card stat-card">
             <div class="card-header bg-white py-3">
-                <h6 class="fw-bold mb-0"><i class="bi bi-list-check text-success me-1"></i> 10 Peserta Terakhir Check-in</h6>
+                <h6 class="fw-bold mb-0"><i class="bi bi-list-check text-success me-1"></i> 10 Peserta Terakhir Check-in
+                </h6>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -133,7 +144,8 @@
                         <tbody>
                             <?php foreach ($recentCheckin as $rc): ?>
                                 <tr>
-                                    <td class="fw-semibold text-success"><?= esc(date('H:i:s', strtotime($rc['checkin_at']))) ?></td>
+                                    <td class="fw-semibold text-success">
+                                        <?= esc(date('H:i:s', strtotime($rc['checkin_at']))) ?></td>
                                     <td><?= esc($rc['no_registrasi']) ?></td>
                                     <td>
                                         <div class="fw-bold"><?= esc($rc['nama']) ?></div>
@@ -167,7 +179,7 @@
         $.post('<?= base_url('petugas/verify') ?>', {
             kode: kode,
             [csrfName]: csrfHash
-        }, function(res) {
+        }, function (res) {
             if (res.csrfHash) csrfHash = res.csrfHash;
             if (!res.ok) {
                 alert(res.msg);
@@ -204,17 +216,17 @@
         }, 'json');
     }
 
-    $('#frmVerifyKode').on('submit', function(e) {
+    $('#frmVerifyKode').on('submit', function (e) {
         e.preventDefault();
         verifyPeserta($('#txtKode').val().trim());
     });
 
-    $('#btnCariNama').on('click', function() {
+    $('#btnCariNama').on('click', function () {
         const q = $('#txtCariNama').val().trim();
         if (q.length < 3) return;
-        $.getJSON('<?= base_url('petugas/cari') ?>', { q: q }, function(rows) {
+        $.getJSON('<?= base_url('petugas/cari') ?>', { q: q }, function (rows) {
             let html = '';
-            rows.forEach(function(r) {
+            rows.forEach(function (r) {
                 const badge = r.checkin_at ? '<span class="badge bg-success">Sudah Hadir</span>' : '<span class="badge bg-warning text-dark">Belum Check-in</span>';
                 html += `<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="verifyPeserta('${r.qr_token}')">
                     <div><strong>${r.nama}</strong> (${r.nik})<br><small class="text-muted">${r.no_registrasi} | ${r.nama_sesi || '-'}</small></div>
@@ -227,7 +239,7 @@
 
     try {
         const scanner = new Html5QrcodeScanner("qrReader", { fps: 10, qrbox: { width: 220, height: 220 } }, false);
-        scanner.render(function(decodedText) {
+        scanner.render(function (decodedText) {
             $('#txtKode').val(decodedText);
             verifyPeserta(decodedText);
         });

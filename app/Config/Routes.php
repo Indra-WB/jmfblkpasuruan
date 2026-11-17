@@ -75,6 +75,7 @@ $routes->group('petugas', ['filter' => 'auth:petugas,admin'], static function ($
 $routes->group('pimpinan', ['filter' => 'auth:pimpinan,admin'], static function ($routes) {
     $routes->get('/', 'Pimpinan\Dashboard::index');
     $routes->get('realtime-stats', 'Pimpinan\Dashboard::realtimeStats');
+    $routes->get('penempatan', 'Pimpinan\Dashboard::penempatan');
     $routes->get('laporan', 'Pimpinan\Dashboard::laporan');
     $routes->get('laporan/excel/(:segment)', 'Pimpinan\Dashboard::exportExcel/$1');
     $routes->get('laporan/pdf/(:segment)', 'Pimpinan\Dashboard::exportPdf/$1');
@@ -118,5 +119,6 @@ $routes->group('admin', ['filter' => 'auth:admin'], static function ($routes) {
     $routes->post('pengaturan', 'Admin\Panel::savePengaturan');
     $routes->post('email/proses', 'Admin\Panel::prosesEmailQueue');
 
+    $routes->get('penempatan', 'Pimpinan\Dashboard::penempatan');
     $routes->get('laporan', 'Pimpinan\Dashboard::laporan');
 });

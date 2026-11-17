@@ -1,39 +1,39 @@
 <?= $this->extend('layouts/panel') ?>
 
 <?= $this->section('content') ?>
-<div class="row g-3 mb-4">
-    <div class="col-md-4 col-lg-2">
-        <div class="card stat-card p-3">
-            <div class="small text-muted">Perusahaan Booth</div>
+<div class="row g-2 g-md-3 mb-4">
+    <div class="col-4 col-lg-2">
+        <div class="card stat-card p-2 p-md-3 h-100 justify-content-between">
+            <div class="small text-muted">Booth Perusahaan</div>
             <h3 class="fw-bold text-primary mb-0"><?= number_format($stats['perusahaan']) ?></h3>
         </div>
     </div>
-    <div class="col-md-4 col-lg-2">
-        <div class="card stat-card p-3">
+    <div class="col-4 col-lg-2">
+        <div class="card stat-card p-2 p-md-3 h-100 justify-content-between">
             <div class="small text-muted">Akun Pencaker</div>
             <h3 class="fw-bold mb-0"><?= number_format($stats['pencaker']) ?></h3>
         </div>
     </div>
-    <div class="col-md-4 col-lg-2">
-        <div class="card stat-card p-3">
+    <div class="col-4 col-lg-2">
+        <div class="card stat-card p-2 p-md-3 h-100 justify-content-between">
             <div class="small text-muted">Peserta Event</div>
             <h3 class="fw-bold text-info mb-0"><?= number_format($stats['peserta']) ?></h3>
         </div>
     </div>
-    <div class="col-md-4 col-lg-2">
-        <div class="card stat-card p-3">
+    <div class="col-4 col-lg-2">
+        <div class="card stat-card p-2 p-md-3 h-100 justify-content-between">
             <div class="small text-muted">Hadir Check-in</div>
             <h3 class="fw-bold text-success mb-0"><?= number_format($stats['hadir']) ?></h3>
         </div>
     </div>
-    <div class="col-md-4 col-lg-2">
-        <div class="card stat-card p-3">
+    <div class="col-4 col-lg-2">
+        <div class="card stat-card p-2 p-md-3 h-100 justify-content-between">
             <div class="small text-muted">Lamaran Masuk</div>
             <h3 class="fw-bold text-warning mb-0"><?= number_format($stats['lamaran']) ?></h3>
         </div>
     </div>
-    <div class="col-md-4 col-lg-2">
-        <div class="card stat-card p-3 bg-success text-white">
+    <div class="col-4 col-lg-2">
+        <div class="card stat-card p-2 p-md-3 h-100 justify-content-between bg-success text-white">
             <div class="small text-white-50">Diterima Kerja</div>
             <h3 class="fw-bold mb-0"><?= number_format($stats['diterima']) ?></h3>
         </div>

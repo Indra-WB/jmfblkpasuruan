@@ -26,32 +26,32 @@
             $persenHadir = ($stats['totalPendaftar'] ?? 0) > 0 ? round(($stats['totalHadir'] / $stats['totalPendaftar']) * 100, 1) : 0;
             $persenSerap = ($stats['totalKuota'] ?? 0) > 0 ? round(($stats['totalDiterima'] / $stats['totalKuota']) * 100, 1) : 0;
         ?>
-        <div class="row g-3 text-center">
-            <div class="col-md-3">
-                <div class="border rounded-3 p-3">
+        <div class="row g-2 g-md-3 text-center">
+            <div class="col-6 col-md-3">
+                <div class="border rounded-3 p-2 p-md-3 h-100 d-flex flex-column justify-content-between align-items-center">
                     <div class="small text-muted">Pendaftar vs Hadir</div>
-                    <h4 class="fw-bold mb-0"><?= number_format($stats['totalHadir'] ?? 0) ?> / <?= number_format($stats['totalPendaftar'] ?? 0) ?></h4>
+                    <h4 class="fw-bold my-1"><?= number_format($stats['totalPendaftar'] ?? 0) ?> / <?= number_format($stats['totalHadir'] ?? 0) ?></h4>
                     <span class="badge bg-primary-subtle text-primary">Kehadiran: <?= $persenHadir ?>%</span>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="border rounded-3 p-3">
+            <div class="col-6 col-md-3">
+                <div class="border rounded-3 p-2 p-md-3 h-100 d-flex flex-column justify-content-between align-items-center">
                     <div class="small text-muted">Alumni BLK & Disabilitas</div>
-                    <h4 class="fw-bold mb-0"><?= (int)($stats['demoKhusus']['alumni_blk'] ?? 0) ?> <small class="fs-6">Alumni</small></h4>
+                    <h4 class="fw-bold my-1"><?= (int)($stats['demoKhusus']['alumni_blk'] ?? 0) ?> <small class="fs-6">Alumni</small></h4>
                     <span class="badge bg-info-subtle text-dark">Disabilitas: <?= (int)($stats['demoKhusus']['disabilitas'] ?? 0) ?> org</span>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="border rounded-3 p-3">
+            <div class="col-6 col-md-3">
+                <div class="border rounded-3 p-2 p-md-3 h-100 d-flex flex-column justify-content-between align-items-center">
                     <div class="small text-muted">Total Lamaran Masuk</div>
-                    <h4 class="fw-bold mb-0"><?= number_format($stats['totalLamaran'] ?? 0) ?></h4>
+                    <h4 class="fw-bold my-1"><?= number_format($stats['totalLamaran'] ?? 0) ?></h4>
                     <span class="badge bg-warning-subtle text-dark">Panggil Tes: <?= number_format($stats['totalPanggil'] ?? 0) ?></span>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="border rounded-3 p-3 bg-success bg-opacity-10 border-success">
-                    <div class="small text-success fw-semibold">Diterima vs Kuota Lowongan</div>
-                    <h4 class="fw-bold text-success mb-0"><?= number_format($stats['totalDiterima'] ?? 0) ?> / <?= number_format($stats['totalKuota'] ?? 0) ?></h4>
+            <div class="col-6 col-md-3">
+                <div class="border rounded-3 p-2 p-md-3 h-100 d-flex flex-column justify-content-between align-items-center bg-success bg-opacity-10 border-success">
+                    <div class="small text-success fw-semibold">Kuota Lowongan vs Diterima</div>
+                    <h4 class="fw-bold text-success my-1"><?= number_format($stats['totalKuota'] ?? 0) ?> / <?= number_format($stats['totalDiterima'] ?? 0) ?></h4>
                     <span class="badge bg-success">Tingkat Penempatan: <?= $persenSerap ?>%</span>
                 </div>
             </div>
@@ -101,7 +101,7 @@
                     <li class="list-inline-item border rounded px-2 py-1">&gt; 30 Th: <strong><?= (int)($stats['demoKhusus']['usia_30_plus'] ?? 0) ?></strong></li>
                 </ul>
 
-                <h6 class="fw-bold small">Jenjang Pendidikan:</h6>
+                <h6 class="fw-bold small">Tingkat Pendidikan:</h6>
                 <table class="table table-sm table-bordered mb-0">
                     <thead class="table-light">
                         <tr><th>Pendidikan</th><th class="text-center">Jumlah</th></tr>

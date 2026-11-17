@@ -171,6 +171,39 @@ class Dashboard extends BaseController
         ]);
     }
 
+    public function penempatan()
+    {
+        $event = $this->activeEvent;
+        $params = [];
+        $whereEvent = '';
+        if ($event) {
+            $whereEvent = 'WHERE ep.event_id = ?';
+            $params[] = $event['id'];
+        }
+
+        $rekap = $this->db->query("
+            SELECT l.id, l.jabatan, COALESCE(l.kuota, 0) AS kuota,
+                   p.nama AS nama_perusahaan, ep.no_booth,
+                   COUNT(lam.id) AS total_pelamar,
+                   SUM(CASE WHEN lam.status = 'LolosBerkas' THEN 1 ELSE 0 END) AS lolos_berkas,
+                   SUM(CASE WHEN lam.status = 'PanggilTes' THEN 1 ELSE 0 END) AS panggil_tes,
+                   SUM(CASE WHEN lam.status = 'Diterima' THEN 1 ELSE 0 END) AS diterima,
+                   SUM(CASE WHEN lam.status = 'Ditolak' THEN 1 ELSE 0 END) AS ditolak
+            FROM event_perusahaan ep
+            JOIN perusahaan p ON p.id = ep.perusahaan_id
+            LEFT JOIN lowongan l ON l.event_perusahaan_id = ep.id
+            LEFT JOIN lamaran lam ON lam.lowongan_id = l.id
+            {$whereEvent}
+            GROUP BY ep.id, l.id
+            ORDER BY ep.no_booth ASC, p.nama ASC, l.id ASC
+        ", $params)->getResultArray();
+
+        return $this->renderView('pimpinan/penempatan', [
+            'title' => 'Rekapitulasi Hasil Penempatan Tenaga Kerja',
+            'rekap' => $rekap,
+        ]);
+    }
+
     public function laporan()
     {
         $event = $this->activeEvent;

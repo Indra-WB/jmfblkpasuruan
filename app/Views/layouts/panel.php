@@ -43,7 +43,7 @@
             <?php if ($role === 'admin'): ?>
                 <div class="sidebar-heading">Menu Utama</div>
                 <li class="nav-item"><a class="nav-link <?= $uri === 'admin' ? 'active' : '' ?>" href="<?= base_url('admin') ?>"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'pimpinan') ? 'active' : '' ?>" href="<?= base_url('pimpinan') ?>"><i class="bi bi-broadcast"></i> Monitor Real-Time</a></li>
+                <li class="nav-item"><a class="nav-link <?= $uri === 'pimpinan' ? 'active' : '' ?>" href="<?= base_url('pimpinan') ?>"><i class="bi bi-broadcast"></i> Monitor Real-Time</a></li>
                 <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'admin/events') ? 'active' : '' ?>" href="<?= base_url('admin/events') ?>"><i class="bi bi-calendar-event"></i> Kelola Event</a></li>
                 <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'admin/sesi') ? 'active' : '' ?>" href="<?= base_url('admin/sesi') ?>"><i class="bi bi-clock-history"></i> Sesi Kedatangan</a></li>
                 <div class="sidebar-heading">Peserta & Lowongan</div>
@@ -52,6 +52,7 @@
                 <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'admin/pencaker') ? 'active' : '' ?>" href="<?= base_url('admin/pencaker') ?>"><i class="bi bi-people"></i> Data Pencari Kerja</a></li>
                 <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'petugas') ? 'active' : '' ?>" href="<?= base_url('petugas') ?>"><i class="bi bi-qr-code-scan"></i> Scanner Check-in</a></li>
                 <div class="sidebar-heading">Evaluasi & Sistem</div>
+                <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'admin/penempatan') || str_starts_with($uri, 'pimpinan/penempatan') ? 'active' : '' ?>" href="<?= base_url('pimpinan/penempatan') ?>"><i class="bi bi-award"></i> Rekap Penempatan</a></li>
                 <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'admin/laporan') || str_starts_with($uri, 'pimpinan/laporan') ? 'active' : '' ?>" href="<?= base_url('pimpinan/laporan') ?>"><i class="bi bi-file-earmark-bar-graph"></i> Laporan & Cetak PDF</a></li>
                 <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'admin/survei') ? 'active' : '' ?>" href="<?= base_url('admin/survei') ?>"><i class="bi bi-ui-checks"></i> Kuesioner Survei</a></li>
                 <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'admin/pengguna') ? 'active' : '' ?>" href="<?= base_url('admin/pengguna') ?>"><i class="bi bi-person-badge"></i> Akun Petugas/Pimpinan</a></li>
@@ -78,6 +79,7 @@
             <?php elseif ($role === 'pimpinan'): ?>
                 <div class="sidebar-heading">Menu Pimpinan / Disnaker</div>
                 <li class="nav-item"><a class="nav-link <?= $uri === 'pimpinan' ? 'active' : '' ?>" href="<?= base_url('pimpinan') ?>"><i class="bi bi-graph-up-arrow"></i> Dashboard Real-Time</a></li>
+                <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'pimpinan/penempatan') ? 'active' : '' ?>" href="<?= base_url('pimpinan/penempatan') ?>"><i class="bi bi-award"></i> Rekap Penempatan</a></li>
                 <li class="nav-item"><a class="nav-link <?= str_starts_with($uri, 'pimpinan/laporan') ? 'active' : '' ?>" href="<?= base_url('pimpinan/laporan') ?>"><i class="bi bi-file-earmark-pdf"></i> Laporan & Export</a></li>
             <?php endif; ?>
         </ul>
@@ -117,20 +119,33 @@
                             <li><a class="dropdown-item" href="<?= base_url('pencaker/lamaran') ?>">Status Lamaran</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('pencaker/survei') ?>">Survei</a></li>
                         <?php elseif ($role === 'perusahaan'): ?>
-                            <li><a class="dropdown-item" href="<?= base_url('perusahaan') ?>">Dashboard</a></li>
-                            <li><a class="dropdown-item" href="<?= base_url('perusahaan/profil') ?>">Profil</a></li>
-                            <li><a class="dropdown-item" href="<?= base_url('perusahaan/lowongan') ?>">Lowongan</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('perusahaan') ?>">Ringkasan & Booth</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('perusahaan/profil') ?>">Profil Perusahaan</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('perusahaan/lowongan') ?>">Kelola Lowongan</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('perusahaan/pelamar') ?>">Seleksi Pelamar</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('perusahaan/penempatan') ?>">Rekap Penempatan</a></li>
-                            <li><a class="dropdown-item" href="<?= base_url('perusahaan/survei') ?>">Survei</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('perusahaan/poster-qr') ?>" target="_blank">Cetak Poster QR Booth</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('perusahaan/survei') ?>">Survei Kepuasan</a></li>
                         <?php elseif ($role === 'admin'): ?>
                             <li><a class="dropdown-item" href="<?= base_url('admin') ?>">Dashboard</a></li>
-                            <li><a class="dropdown-item" href="<?= base_url('admin/events') ?>">Event</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('pimpinan') ?>">Monitor Real-Time</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('admin/events') ?>">Kelola Event</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('admin/sesi') ?>">Sesi Kedatangan</a></li>
-                            <li><a class="dropdown-item" href="<?= base_url('admin/perusahaan') ?>">Perusahaan</a></li>
-                            <li><a class="dropdown-item" href="<?= base_url('admin/pencaker') ?>">Pencari Kerja</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('admin/perusahaan') ?>">Perusahaan & Booth</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('admin/lowongan') ?>">Semua Lowongan</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('admin/pencaker') ?>">Data Pencari Kerja</a></li>
                             <li><a class="dropdown-item" href="<?= base_url('petugas') ?>">Scanner Check-in</a></li>
-                            <li><a class="dropdown-item" href="<?= base_url('pimpinan/laporan') ?>">Laporan</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('pimpinan/penempatan') ?>">Rekap Penempatan</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('pimpinan/laporan') ?>">Laporan & Cetak PDF</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('admin/survei') ?>">Kuesioner Survei</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('admin/pengguna') ?>">Akun Petugas/Pimpinan</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('admin/pengaturan') ?>">Pengaturan & SMTP</a></li>
+                        <?php elseif ($role === 'petugas'): ?>
+                            <li><a class="dropdown-item" href="<?= base_url('petugas') ?>">Scan Check-in Peserta</a></li>
+                        <?php elseif ($role === 'pimpinan'): ?>
+                            <li><a class="dropdown-item" href="<?= base_url('pimpinan') ?>">Dashboard Real-Time</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('pimpinan/penempatan') ?>">Rekap Penempatan</a></li>
+                            <li><a class="dropdown-item" href="<?= base_url('pimpinan/laporan') ?>">Laporan & Export</a></li>
                         <?php endif; ?>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="<?= base_url('logout') ?>">Keluar</a></li>

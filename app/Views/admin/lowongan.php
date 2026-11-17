@@ -12,7 +12,7 @@
                     <tr>
                         <th>Booth</th>
                         <th>Perusahaan</th>
-                        <th>Jabatan Lowongan</th>
+                        <th>Lowongan Jabatan</th>
                         <th>Pendidikan & Gender</th>
                         <th class="text-center">Kuota</th>
                         <th class="text-center">Pelamar</th>
@@ -32,13 +32,16 @@
                                 <?php endif; ?>
                             </td>
                             <td>Min. <?= esc($l['pendidikan_min']) ?> (<?= esc($l['jenis_kelamin']) ?>)</td>
-                            <td class="text-center"><?= (int)$l['kuota'] ?></td>
-                            <td class="text-center fw-bold"><?= (int)$l['jml_pelamar'] ?></td>
-                            <td><span class="badge <?= $l['is_active'] ? 'bg-success' : 'bg-secondary' ?>"><?= $l['is_active'] ? 'Aktif' : 'Nonaktif' ?></span></td>
+                            <td class="text-center"><?= (int) $l['kuota'] ?></td>
+                            <td class="text-center fw-bold"><?= (int) $l['jml_pelamar'] ?></td>
+                            <td><span
+                                    class="badge <?= $l['is_active'] ? 'bg-success' : 'bg-secondary' ?>"><?= $l['is_active'] ? 'Aktif' : 'Nonaktif' ?></span>
+                            </td>
                             <td>
                                 <form method="post" action="<?= base_url('admin/lowongan/toggle/' . $l['id']) ?>">
                                     <?= csrf_field() ?>
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary"><?= $l['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?></button>
+                                    <button type="submit"
+                                        class="btn btn-sm btn-outline-secondary"><?= $l['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?></button>
                                 </form>
                             </td>
                         </tr>
