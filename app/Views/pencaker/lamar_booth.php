@@ -66,7 +66,8 @@
                                     </div>
                                     <div class="small text-muted ms-4 mt-1">
                                         Min. Pendidikan: <strong><?= esc($l['pendidikan_min']) ?></strong> &bull;
-                                        Gender: <?= esc($l['jenis_kelamin']) ?> &bull;
+                                        Gender: <?= $l['jenis_kelamin'] === 'L' ? 'Laki-Laki' : ($l['jenis_kelamin'] === 'P' ? 'Perempuan' : 'Laki-Laki / Perempuan') ?> &bull;
+                                        Kuota: <strong><?= (int) $l['kuota'] ?> Orang</strong> &bull;
                                         Lokasi: <?= esc($l['lokasi_kerja']) ?>
                                     </div>
                                     <div class="small text-secondary ms-4 mt-1"><?= esc($l['kualifikasi']) ?></div>

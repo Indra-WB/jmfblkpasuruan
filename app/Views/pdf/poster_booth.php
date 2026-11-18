@@ -147,8 +147,8 @@
                         <tr>
                             <td><strong><?= esc($l['jabatan']) ?></strong></td>
                             <td><?= esc($l['pendidikan_min']) ?></td>
-                            <td><?= esc($l['jenis_kelamin']) ?></td>
-                            <td><?= (int) $l['kuota'] ?> orang</td>
+                            <td><?= $l['jenis_kelamin'] === 'L' ? 'Laki-Laki' : ($l['jenis_kelamin'] === 'P' ? 'Perempuan' : 'Laki-Laki / Perempuan') ?></td>
+                            <td><?= (int) $l['kuota'] ?> Orang</td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
