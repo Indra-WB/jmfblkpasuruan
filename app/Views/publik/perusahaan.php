@@ -16,8 +16,15 @@
                             <span class="badge bg-primary">Booth <?= esc($p['no_booth']) ?></span>
                             <span class="badge badge-soft-success"><?= (int)$p['jml_lowongan'] ?> Lowongan (Kuota <?= (int)$p['total_kuota'] ?>)</span>
                         </div>
-                        <h5 class="fw-bold mb-1"><?= esc($p['nama']) ?></h5>
-                        <div class="small text-primary fw-semibold mb-2"><?= esc($p['bidang_usaha']) ?></div>
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <?php if (! empty($p['logo'])): ?>
+                                <img src="<?= base_url('media/logo/' . $p['logo']) ?>" alt="Logo <?= esc($p['nama']) ?>" class="rounded border p-1 bg-white flex-shrink-0" style="width: 50px; height: 50px; object-fit: contain;">
+                            <?php endif; ?>
+                            <div>
+                                <h5 class="fw-bold mb-1"><?= esc($p['nama']) ?></h5>
+                                <div class="small text-primary fw-semibold"><?= esc($p['bidang_usaha']) ?></div>
+                            </div>
+                        </div>
                         <p class="small text-muted mb-3"><?= esc($p['deskripsi']) ?></p>
                         <div class="small text-secondary"><i class="bi bi-geo-alt me-1"></i><?= esc($p['alamat']) ?></div>
                     </div>

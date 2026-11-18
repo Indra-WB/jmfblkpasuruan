@@ -11,15 +11,35 @@ class Dashboard extends BaseController
 {
     private function collectEventData(int $eventId): array
     {
-        $totalPendaftar = (int) $this->db->table('event_peserta')->where('event_id', $eventId)->countAllResults();
-        $totalHadir     = (int) $this->db->table('event_peserta')->where('event_id', $eventId)->where('checkin_at IS NOT NULL')->countAllResults();
-        $totalPerusahaan= (int) $this->db->table('event_perusahaan')->where('event_id', $eventId)->countAllResults();
+        $totalPendaftar = (int) $this->db->table('event_peserta ep')
+            ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+            ->join('users u', 'u.id = pck.user_id')
+            ->where('ep.event_id', $eventId)
+            ->where('u.is_active', 1)
+            ->countAllResults();
+
+        $totalHadir = (int) $this->db->table('event_peserta ep')
+            ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+            ->join('users u', 'u.id = pck.user_id')
+            ->where('ep.event_id', $eventId)
+            ->where('ep.checkin_at IS NOT NULL')
+            ->where('u.is_active', 1)
+            ->countAllResults();
+
+        $totalPerusahaan = (int) $this->db->table('event_perusahaan ep')
+            ->join('perusahaan p', 'p.id = ep.perusahaan_id')
+            ->join('users u', 'u.id = p.user_id')
+            ->where('ep.event_id', $eventId)
+            ->where('u.is_active', 1)
+            ->countAllResults();
 
         $lowSummary = $this->db->query("
             SELECT COUNT(l.id) AS jml_lowongan, COALESCE(SUM(l.kuota), 0) AS total_kuota
             FROM lowongan l
             JOIN event_perusahaan ep ON ep.id = l.event_perusahaan_id
-            WHERE ep.event_id = ?
+            JOIN perusahaan p ON p.id = ep.perusahaan_id
+            JOIN users u ON u.id = p.user_id
+            WHERE ep.event_id = ? AND l.is_active = 1 AND u.is_active = 1
         ", [$eventId])->getRowArray();
 
         $lamSummary = $this->db->query("
@@ -28,15 +48,22 @@ class Dashboard extends BaseController
                    SUM(CASE WHEN lam.status = 'PanggilTes' THEN 1 ELSE 0 END) AS total_panggil
             FROM lamaran lam
             JOIN event_perusahaan ep ON ep.id = lam.event_perusahaan_id
-            WHERE ep.event_id = ?
+            JOIN perusahaan p ON p.id = ep.perusahaan_id
+            JOIN users u_comp ON u_comp.id = p.user_id
+            JOIN event_peserta eps ON eps.id = lam.event_peserta_id
+            JOIN pencaker pck ON pck.id = eps.pencaker_id
+            JOIN users u_pck ON u_pck.id = pck.user_id
+            WHERE ep.event_id = ? AND u_comp.is_active = 1 AND u_pck.is_active = 1
         ", [$eventId])->getRowArray();
 
         $perSesi = $this->db->query("
             SELECT s.nama, s.jam_mulai, s.jam_selesai, s.kuota,
-                   COUNT(ep.id) AS terdaftar,
-                   SUM(CASE WHEN ep.checkin_at IS NOT NULL THEN 1 ELSE 0 END) AS hadir
+                   COALESCE(SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END), 0) AS terdaftar,
+                   COALESCE(SUM(CASE WHEN u.is_active = 1 AND ep.checkin_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS hadir
             FROM event_sesi s
             LEFT JOIN event_peserta ep ON ep.sesi_id = s.id
+            LEFT JOIN pencaker pck ON pck.id = ep.pencaker_id
+            LEFT JOIN users u ON u.id = pck.user_id
             WHERE s.event_id = ?
             GROUP BY s.id
             ORDER BY s.urutan ASC
@@ -46,15 +73,19 @@ class Dashboard extends BaseController
             SELECT p.nama AS nama_perusahaan, ep.no_booth,
                    COUNT(DISTINCT l.id) AS jml_lowongan,
                    COALESCE(SUM(DISTINCT l.kuota), 0) AS total_kuota,
-                   COUNT(lam.id) AS total_pelamar,
-                   SUM(CASE WHEN lam.status = 'LolosBerkas' THEN 1 ELSE 0 END) AS lolos_berkas,
-                   SUM(CASE WHEN lam.status = 'PanggilTes' THEN 1 ELSE 0 END) AS panggil_tes,
-                   SUM(CASE WHEN lam.status = 'Diterima' THEN 1 ELSE 0 END) AS diterima
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 THEN 1 ELSE 0 END), 0) AS total_pelamar,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'LolosBerkas' THEN 1 ELSE 0 END), 0) AS lolos_berkas,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'PanggilTes' THEN 1 ELSE 0 END), 0) AS panggil_tes,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Diterima' THEN 1 ELSE 0 END), 0) AS diterima
             FROM event_perusahaan ep
             JOIN perusahaan p ON p.id = ep.perusahaan_id
-            LEFT JOIN lowongan l ON l.event_perusahaan_id = ep.id
+            JOIN users u_comp ON u_comp.id = p.user_id
+            LEFT JOIN lowongan l ON l.event_perusahaan_id = ep.id AND l.is_active = 1
             LEFT JOIN lamaran lam ON lam.lowongan_id = l.id
-            WHERE ep.event_id = ?
+            LEFT JOIN event_peserta eps ON eps.id = lam.event_peserta_id
+            LEFT JOIN pencaker pck ON pck.id = eps.pencaker_id
+            LEFT JOIN users u_pck ON u_pck.id = pck.user_id
+            WHERE ep.event_id = ? AND u_comp.is_active = 1
             GROUP BY ep.id
             ORDER BY total_pelamar DESC, ep.no_booth ASC
         ", [$eventId])->getResultArray();
@@ -64,7 +95,8 @@ class Dashboard extends BaseController
             SELECT pck.jk, COUNT(ep.id) AS jml
             FROM event_peserta ep
             JOIN pencaker pck ON pck.id = ep.pencaker_id
-            WHERE ep.event_id = ?
+            JOIN users u ON u.id = pck.user_id
+            WHERE ep.event_id = ? AND u.is_active = 1
             GROUP BY pck.jk
         ", [$eventId])->getResultArray();
 
@@ -73,7 +105,8 @@ class Dashboard extends BaseController
             SELECT pck.pendidikan, COUNT(ep.id) AS jml
             FROM event_peserta ep
             JOIN pencaker pck ON pck.id = ep.pencaker_id
-            WHERE ep.event_id = ?
+            JOIN users u ON u.id = pck.user_id
+            WHERE ep.event_id = ? AND u.is_active = 1
             GROUP BY pck.pendidikan
             ORDER BY FIELD(pck.pendidikan, 'SD','SMP','SMA','SMK','D1','D2','D3','D4/S1','S2')
         ", [$eventId])->getResultArray();
@@ -86,9 +119,10 @@ class Dashboard extends BaseController
                    COUNT(ep.id) AS jml
             FROM event_peserta ep
             JOIN pencaker pck ON pck.id = ep.pencaker_id
+            JOIN users u ON u.id = pck.user_id
             LEFT JOIN desa d ON d.id = pck.desa_id
             LEFT JOIN kecamatan k ON k.id = d.kecamatan_id
-            WHERE ep.event_id = ?
+            WHERE ep.event_id = ? AND u.is_active = 1
             GROUP BY wilayah
             ORDER BY jml DESC
         ", [$eventId])->getResultArray();
@@ -103,14 +137,17 @@ class Dashboard extends BaseController
                    SUM(CASE WHEN TIMESTAMPDIFF(YEAR, pck.tgl_lahir, CURDATE()) > 30 THEN 1 ELSE 0 END) AS usia_30_plus
             FROM event_peserta ep
             JOIN pencaker pck ON pck.id = ep.pencaker_id
-            WHERE ep.event_id = ?
+            JOIN users u ON u.id = pck.user_id
+            WHERE ep.event_id = ? AND u.is_active = 1
         ", [$eventId])->getRowArray();
 
         // Grafik Check-in per Jam
         $perJam = $this->db->query("
-            SELECT DATE_FORMAT(checkin_at, '%H:00') AS jam, COUNT(id) AS jml
-            FROM event_peserta
-            WHERE event_id = ? AND checkin_at IS NOT NULL
+            SELECT DATE_FORMAT(ep.checkin_at, '%H:00') AS jam, COUNT(ep.id) AS jml
+            FROM event_peserta ep
+            JOIN pencaker pck ON pck.id = ep.pencaker_id
+            JOIN users u ON u.id = pck.user_id
+            WHERE ep.event_id = ? AND ep.checkin_at IS NOT NULL AND u.is_active = 1
             GROUP BY jam
             ORDER BY jam ASC
         ", [$eventId])->getResultArray();
@@ -175,24 +212,28 @@ class Dashboard extends BaseController
     {
         $event = $this->activeEvent;
         $params = [];
-        $whereEvent = '';
+        $whereEvent = 'WHERE u_comp.is_active = 1';
         if ($event) {
-            $whereEvent = 'WHERE ep.event_id = ?';
+            $whereEvent .= ' AND ep.event_id = ?';
             $params[] = $event['id'];
         }
 
         $rekap = $this->db->query("
             SELECT l.id, l.jabatan, COALESCE(l.kuota, 0) AS kuota,
                    p.nama AS nama_perusahaan, ep.no_booth,
-                   COUNT(lam.id) AS total_pelamar,
-                   SUM(CASE WHEN lam.status = 'LolosBerkas' THEN 1 ELSE 0 END) AS lolos_berkas,
-                   SUM(CASE WHEN lam.status = 'PanggilTes' THEN 1 ELSE 0 END) AS panggil_tes,
-                   SUM(CASE WHEN lam.status = 'Diterima' THEN 1 ELSE 0 END) AS diterima,
-                   SUM(CASE WHEN lam.status = 'Ditolak' THEN 1 ELSE 0 END) AS ditolak
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 THEN 1 ELSE 0 END), 0) AS total_pelamar,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'LolosBerkas' THEN 1 ELSE 0 END), 0) AS lolos_berkas,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'PanggilTes' THEN 1 ELSE 0 END), 0) AS panggil_tes,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Diterima' THEN 1 ELSE 0 END), 0) AS diterima,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Ditolak' THEN 1 ELSE 0 END), 0) AS ditolak
             FROM event_perusahaan ep
             JOIN perusahaan p ON p.id = ep.perusahaan_id
-            LEFT JOIN lowongan l ON l.event_perusahaan_id = ep.id
+            JOIN users u_comp ON u_comp.id = p.user_id
+            LEFT JOIN lowongan l ON l.event_perusahaan_id = ep.id AND l.is_active = 1
             LEFT JOIN lamaran lam ON lam.lowongan_id = l.id
+            LEFT JOIN event_peserta eps ON eps.id = lam.event_peserta_id
+            LEFT JOIN pencaker pck ON pck.id = eps.pencaker_id
+            LEFT JOIN users u_pck ON u_pck.id = pck.user_id
             {$whereEvent}
             GROUP BY ep.id, l.id
             ORDER BY ep.no_booth ASC, p.nama ASC, l.id ASC

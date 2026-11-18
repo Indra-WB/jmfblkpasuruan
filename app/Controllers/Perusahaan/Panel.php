@@ -509,14 +509,17 @@ class Panel extends BaseController
         if ($ep) {
             $rekap = $this->db->query("
                 SELECT l.id, l.jabatan, l.kuota,
-                       COUNT(lam.id) AS total_pelamar,
-                       SUM(CASE WHEN lam.status = 'LolosBerkas' THEN 1 ELSE 0 END) AS lolos_berkas,
-                       SUM(CASE WHEN lam.status = 'PanggilTes' THEN 1 ELSE 0 END) AS panggil_tes,
-                       SUM(CASE WHEN lam.status = 'Diterima' THEN 1 ELSE 0 END) AS diterima,
-                       SUM(CASE WHEN lam.status = 'Ditolak' THEN 1 ELSE 0 END) AS ditolak
+                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 THEN 1 ELSE 0 END), 0) AS total_pelamar,
+                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'LolosBerkas' THEN 1 ELSE 0 END), 0) AS lolos_berkas,
+                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'PanggilTes' THEN 1 ELSE 0 END), 0) AS panggil_tes,
+                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Diterima' THEN 1 ELSE 0 END), 0) AS diterima,
+                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Ditolak' THEN 1 ELSE 0 END), 0) AS ditolak
                 FROM lowongan l
                 LEFT JOIN lamaran lam ON lam.lowongan_id = l.id
-                WHERE l.event_perusahaan_id = ?
+                LEFT JOIN event_peserta eps ON eps.id = lam.event_peserta_id
+                LEFT JOIN pencaker pck ON pck.id = eps.pencaker_id
+                LEFT JOIN users u_pck ON u_pck.id = pck.user_id
+                WHERE l.event_perusahaan_id = ? AND l.is_active = 1
                 GROUP BY l.id
             ", [$ep['id']])->getResultArray();
         }

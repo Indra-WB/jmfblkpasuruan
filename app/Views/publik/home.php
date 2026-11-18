@@ -214,8 +214,15 @@
                                         Disabilitas</span>
                                 <?php endif; ?>
                             </div>
-                            <h5 class="fw-bold mb-1"><?= esc($l['jabatan']) ?></h5>
-                            <div class="text-primary fw-semibold small mb-3"><?= esc($l['nama_perusahaan']) ?></div>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <?php if (!empty($l['logo'])): ?>
+                                    <img src="<?= base_url('media/logo/' . $l['logo']) ?>" alt="Logo <?= esc($l['nama_perusahaan']) ?>" class="rounded border p-1 bg-white flex-shrink-0" style="width: 48px; height: 48px; object-fit: contain;">
+                                <?php endif; ?>
+                                <div>
+                                    <h5 class="fw-bold mb-1"><?= esc($l['jabatan']) ?></h5>
+                                    <div class="text-primary fw-semibold small"><?= esc($l['nama_perusahaan']) ?></div>
+                                </div>
+                            </div>
                             <div class="small text-muted mb-3">
                                 <div><i class="bi bi-mortarboard me-1"></i> Min. <?= esc($l['pendidikan_min']) ?> &bull;
                                     Gender: <?= esc($l['jenis_kelamin']) ?></div>

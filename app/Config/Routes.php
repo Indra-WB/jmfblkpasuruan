@@ -96,6 +96,7 @@ $routes->group('admin', ['filter' => 'auth:admin'], static function ($routes) {
     $routes->get('perusahaan', 'Admin\Panel::perusahaan');
     $routes->post('perusahaan/simpan', 'Admin\Panel::savePerusahaan');
     $routes->post('perusahaan/reset-password/(:num)', 'Admin\Panel::resetPasswordPerusahaan/$1');
+    $routes->post('perusahaan/toggle/(:num)', 'Admin\Panel::toggleUser/$1');
     $routes->post('perusahaan/booth', 'Admin\Panel::saveBooth');
     $routes->get('perusahaan/poster-qr/(:num)', 'Admin\Panel::posterQr/$1');
     $routes->get('perusahaan/poster-qr-semua', 'Admin\Panel::posterQrSemua');

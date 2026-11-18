@@ -47,6 +47,11 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label small fw-semibold">Logo Perusahaan (JPG/PNG maks 1 MB)</label>
+                    <?php if (! empty($perusahaan['logo'])): ?>
+                        <div class="mb-2">
+                            <img src="<?= base_url('media/logo/' . $perusahaan['logo']) ?>" alt="Logo <?= esc($perusahaan['nama']) ?>" class="rounded border p-1 bg-white" style="height: 56px; width: auto; max-width: 140px; object-fit: contain;">
+                        </div>
+                    <?php endif; ?>
                     <input type="file" name="logo" accept=".jpg,.jpeg,.png" class="form-control">
                 </div>
                 <div class="col-12">

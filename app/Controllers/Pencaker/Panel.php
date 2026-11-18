@@ -394,7 +394,9 @@ class Panel extends BaseController
             $boothList = $this->db->table('event_perusahaan ep')
                 ->select('ep.*, p.nama AS nama_perusahaan, p.bidang_usaha')
                 ->join('perusahaan p', 'p.id = ep.perusahaan_id')
+                ->join('users u', 'u.id = p.user_id')
                 ->where('ep.event_id', $this->activeEvent['id'])
+                ->where('u.is_active', 1)
                 ->orderBy('ep.no_booth', 'ASC')
                 ->get()
                 ->getResultArray();
@@ -414,8 +416,10 @@ class Panel extends BaseController
         $ep = $this->db->table('event_perusahaan ep')
             ->select('ep.*, p.nama AS nama_perusahaan, p.bidang_usaha, p.alamat, p.deskripsi, e.nama AS nama_event, e.lamaran_dibuka')
             ->join('perusahaan p', 'p.id = ep.perusahaan_id')
+            ->join('users u', 'u.id = p.user_id')
             ->join('events e', 'e.id = ep.event_id')
             ->where('ep.qr_token', trim($token))
+            ->where('u.is_active', 1)
             ->get()
             ->getRowArray();
 
@@ -463,8 +467,10 @@ class Panel extends BaseController
         $ep = $this->db->table('event_perusahaan ep')
             ->select('ep.*, p.nama AS nama_perusahaan, e.lamaran_dibuka')
             ->join('perusahaan p', 'p.id = ep.perusahaan_id')
+            ->join('users u', 'u.id = p.user_id')
             ->join('events e', 'e.id = ep.event_id')
             ->where('ep.qr_token', trim($token))
+            ->where('u.is_active', 1)
             ->get()
             ->getRowArray();
 

@@ -19,23 +19,38 @@ class Home extends BaseController
         if ($event) {
             if (! empty($event['sesi_aktif'])) {
                 $sesiList = $this->db->query("
-                    SELECT s.*, COUNT(ep.id) AS terisi
+                    SELECT s.*, COALESCE(SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END), 0) AS terisi
                     FROM event_sesi s
                     LEFT JOIN event_peserta ep ON ep.sesi_id = s.id
+                    LEFT JOIN pencaker pck ON pck.id = ep.pencaker_id
+                    LEFT JOIN users u ON u.id = pck.user_id
                     WHERE s.event_id = ?
                     GROUP BY s.id
                     ORDER BY s.urutan ASC, s.jam_mulai ASC
                 ", [$event['id']])->getResultArray();
             }
 
-            $stats['perusahaan'] = (int) $this->db->table('event_perusahaan')->where('event_id', $event['id'])->countAllResults();
-            $stats['peserta']    = (int) $this->db->table('event_peserta')->where('event_id', $event['id'])->countAllResults();
+            $stats['perusahaan'] = (int) $this->db->table('event_perusahaan ep')
+                ->join('perusahaan p', 'p.id = ep.perusahaan_id')
+                ->join('users u', 'u.id = p.user_id')
+                ->where('ep.event_id', $event['id'])
+                ->where('u.is_active', 1)
+                ->countAllResults();
+
+            $stats['peserta'] = (int) $this->db->table('event_peserta ep')
+                ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+                ->join('users u', 'u.id = pck.user_id')
+                ->where('ep.event_id', $event['id'])
+                ->where('u.is_active', 1)
+                ->countAllResults();
 
             $lowSummary = $this->db->query("
                 SELECT COUNT(l.id) AS jml_lowongan, COALESCE(SUM(l.kuota), 0) AS total_kuota
                 FROM lowongan l
                 JOIN event_perusahaan ep ON ep.id = l.event_perusahaan_id
-                WHERE ep.event_id = ? AND l.is_active = 1
+                JOIN perusahaan p ON p.id = ep.perusahaan_id
+                JOIN users u ON u.id = p.user_id
+                WHERE ep.event_id = ? AND l.is_active = 1 AND u.is_active = 1
             ", [$event['id']])->getRowArray();
 
             $stats['lowongan'] = (int) ($lowSummary['jml_lowongan'] ?? 0);
@@ -46,7 +61,8 @@ class Home extends BaseController
                 FROM lowongan l
                 JOIN event_perusahaan ep ON ep.id = l.event_perusahaan_id
                 JOIN perusahaan p ON p.id = ep.perusahaan_id
-                WHERE ep.event_id = ? AND l.is_active = 1
+                JOIN users u ON u.id = p.user_id
+                WHERE ep.event_id = ? AND l.is_active = 1 AND u.is_active = 1
                 ORDER BY l.id DESC
                 LIMIT 6
             ", [$event['id']])->getResultArray();
@@ -130,8 +146,9 @@ class Home extends BaseController
                 SELECT p.*, ep.no_booth, COUNT(l.id) AS jml_lowongan, COALESCE(SUM(l.kuota), 0) AS total_kuota
                 FROM event_perusahaan ep
                 JOIN perusahaan p ON p.id = ep.perusahaan_id
+                JOIN users u ON u.id = p.user_id
                 LEFT JOIN lowongan l ON l.event_perusahaan_id = ep.id AND l.is_active = 1
-                WHERE ep.event_id = ?
+                WHERE ep.event_id = ? AND u.is_active = 1
                 GROUP BY ep.id
                 ORDER BY ep.no_booth ASC
             ", [$event['id']])->getResultArray();

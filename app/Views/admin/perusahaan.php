@@ -84,7 +84,12 @@
                                         <span class="badge bg-primary fs-6"><?= esc($p['no_booth'] ?: '-') ?></span>
                                     </td>
                                     <td>
-                                        <div class="fw-bold"><?= esc($p['nama']) ?></div>
+                                        <div class="fw-bold">
+                                            <?= esc($p['nama']) ?>
+                                            <?php if (! $p['is_active']): ?>
+                                                <span class="badge bg-secondary ms-1">Nonaktif</span>
+                                            <?php endif; ?>
+                                        </div>
                                         <div class="text-muted"><?= esc($p['bidang_usaha']) ?> &bull; HRD: <?= esc($p['nama_hrd'] ?: '-') ?></div>
                                     </td>
                                     <td><code><?= esc($p['email_login']) ?></code></td>
@@ -99,11 +104,19 @@
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick='editComp(<?= json_encode($p) ?>)' title="Edit"><i class="bi bi-pencil"></i></button>
-                                        <form method="post" action="<?= base_url('admin/perusahaan/reset-password/' . $p['user_id']) ?>" class="d-inline" onsubmit="return confirm('Reset password perusahaan ini menjadi Perusahaan123! ?')">
-                                            <?= csrf_field() ?>
-                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Reset Password"><i class="bi bi-key"></i></button>
-                                        </form>
+                                        <div class="d-flex flex-column gap-1 align-items-center">
+                                            <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick='editComp(<?= json_encode($p) ?>)' title="Edit"><i class="bi bi-pencil"></i></button>
+                                            <form method="post" action="<?= base_url('admin/perusahaan/reset-password/' . $p['user_id']) ?>" class="w-100" onsubmit="return confirm('Reset password perusahaan ini menjadi Perusahaan123! ?')">
+                                                <?= csrf_field() ?>
+                                                <button type="submit" class="btn btn-sm btn-outline-warning w-100" title="Reset Password"><i class="bi bi-key"></i></button>
+                                            </form>
+                                            <form method="post" action="<?= base_url('admin/perusahaan/toggle/' . $p['user_id']) ?>" class="w-100" onsubmit="return confirm('<?= $p['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?> perusahaan ini?')">
+                                                <?= csrf_field() ?>
+                                                <button type="submit" class="btn btn-sm <?= $p['is_active'] ? 'btn-outline-danger' : 'btn-outline-success' ?> w-100" title="<?= $p['is_active'] ? 'Nonaktifkan Perusahaan' : 'Aktifkan Perusahaan' ?>">
+                                                    <i class="bi <?= $p['is_active'] ? 'bi-slash-circle' : 'bi-check-circle' ?>"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

@@ -38,10 +38,17 @@
 <div class="row g-4">
     <div class="col-lg-7">
         <div class="card stat-card p-4">
-            <h5 class="fw-bold mb-2"><?= esc($perusahaan['nama']) ?></h5>
-            <p class="small text-muted mb-3"><?= esc($perusahaan['bidang_usaha']) ?> &bull;
-                <?= esc($perusahaan['alamat']) ?>
-            </p>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <?php if (! empty($perusahaan['logo'])): ?>
+                    <img src="<?= base_url('media/logo/' . $perusahaan['logo']) ?>" alt="Logo <?= esc($perusahaan['nama']) ?>" class="rounded border p-1 bg-white flex-shrink-0" style="width: 60px; height: 60px; object-fit: contain;">
+                <?php endif; ?>
+                <div>
+                    <h5 class="fw-bold mb-1"><?= esc($perusahaan['nama']) ?></h5>
+                    <p class="small text-muted mb-0"><?= esc($perusahaan['bidang_usaha']) ?> &bull;
+                        <?= esc($perusahaan['alamat']) ?>
+                    </p>
+                </div>
+            </div>
             <div class="d-flex flex-wrap gap-2">
                 <a href="<?= base_url('perusahaan/lowongan') ?>" class="btn btn-primary"><i
                         class="bi bi-briefcase me-1"></i> Kelola Lowongan</a>

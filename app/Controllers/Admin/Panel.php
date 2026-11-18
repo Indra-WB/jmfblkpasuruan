@@ -13,12 +13,51 @@ class Panel extends BaseController
         $eventId = $event['id'] ?? 0;
 
         $stats = [
-            'perusahaan' => (int) $this->db->table('event_perusahaan')->where('event_id', $eventId)->countAllResults(),
-            'pencaker'   => (int) $this->db->table('pencaker')->countAllResults(),
-            'peserta'    => (int) $this->db->table('event_peserta')->where('event_id', $eventId)->countAllResults(),
-            'hadir'      => (int) $this->db->table('event_peserta')->where('event_id', $eventId)->where('checkin_at IS NOT NULL')->countAllResults(),
-            'lamaran'    => (int) $this->db->query("SELECT COUNT(l.id) AS jml FROM lamaran l JOIN event_perusahaan ep ON ep.id = l.event_perusahaan_id WHERE ep.event_id = ?", [$eventId])->getRow('jml'),
-            'diterima'   => (int) $this->db->query("SELECT COUNT(l.id) AS jml FROM lamaran l JOIN event_perusahaan ep ON ep.id = l.event_perusahaan_id WHERE ep.event_id = ? AND l.status = 'Diterima'", [$eventId])->getRow('jml'),
+            'perusahaan' => (int) $this->db->table('event_perusahaan ep')
+                ->join('perusahaan p', 'p.id = ep.perusahaan_id')
+                ->join('users u', 'u.id = p.user_id')
+                ->where('ep.event_id', $eventId)
+                ->where('u.is_active', 1)
+                ->countAllResults(),
+            'pencaker'   => (int) $this->db->table('pencaker pck')
+                ->join('users u', 'u.id = pck.user_id')
+                ->where('u.is_active', 1)
+                ->countAllResults(),
+            'peserta'    => (int) $this->db->table('event_peserta ep')
+                ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+                ->join('users u', 'u.id = pck.user_id')
+                ->where('ep.event_id', $eventId)
+                ->where('u.is_active', 1)
+                ->countAllResults(),
+            'hadir'      => (int) $this->db->table('event_peserta ep')
+                ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+                ->join('users u', 'u.id = pck.user_id')
+                ->where('ep.event_id', $eventId)
+                ->where('ep.checkin_at IS NOT NULL')
+                ->where('u.is_active', 1)
+                ->countAllResults(),
+            'lamaran'    => (int) $this->db->query("
+                SELECT COUNT(l.id) AS jml
+                FROM lamaran l
+                JOIN event_perusahaan ep ON ep.id = l.event_perusahaan_id
+                JOIN perusahaan p ON p.id = ep.perusahaan_id
+                JOIN users u_comp ON u_comp.id = p.user_id
+                JOIN event_peserta eps ON eps.id = l.event_peserta_id
+                JOIN pencaker pck ON pck.id = eps.pencaker_id
+                JOIN users u_pck ON u_pck.id = pck.user_id
+                WHERE ep.event_id = ? AND u_comp.is_active = 1 AND u_pck.is_active = 1
+            ", [$eventId])->getRow('jml'),
+            'diterima'   => (int) $this->db->query("
+                SELECT COUNT(l.id) AS jml
+                FROM lamaran l
+                JOIN event_perusahaan ep ON ep.id = l.event_perusahaan_id
+                JOIN perusahaan p ON p.id = ep.perusahaan_id
+                JOIN users u_comp ON u_comp.id = p.user_id
+                JOIN event_peserta eps ON eps.id = l.event_peserta_id
+                JOIN pencaker pck ON pck.id = eps.pencaker_id
+                JOIN users u_pck ON u_pck.id = pck.user_id
+                WHERE ep.event_id = ? AND l.status = 'Diterima' AND u_comp.is_active = 1 AND u_pck.is_active = 1
+            ", [$eventId])->getRow('jml'),
             'email_antre'=> (int) $this->db->table('email_queue')->where('status', 'antre')->countAllResults(),
         ];
 
@@ -434,7 +473,18 @@ class Panel extends BaseController
     {
         $u = $this->db->table('users')->where('id', $userId)->get()->getRowArray();
         if ($u && $u['role'] !== 'admin') {
-            $this->db->table('users')->where('id', $userId)->update(['is_active' => $u['is_active'] ? 0 : 1]);
+            $newActive = $u['is_active'] ? 0 : 1;
+            $this->db->table('users')->where('id', $userId)->update(['is_active' => $newActive]);
+
+            if ($u['role'] === 'perusahaan') {
+                $p = $this->db->table('perusahaan')->where('user_id', $userId)->get()->getRowArray();
+                if ($p) {
+                    $eps = $this->db->table('event_perusahaan')->where('perusahaan_id', $p['id'])->get()->getResultArray();
+                    foreach ($eps as $ep) {
+                        $this->db->table('lowongan')->where('event_perusahaan_id', $ep['id'])->update(['is_active' => $newActive]);
+                    }
+                }
+            }
         }
         return redirect()->back()->with('success', 'Status aktif akun diperbarui.');
     }

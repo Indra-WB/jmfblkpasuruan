@@ -22,8 +22,15 @@
                         <?php endif; ?>
                     </div>
 
-                    <h2 class="fw-bold mb-1"><?= esc($low['jabatan']) ?></h2>
-                    <h5 class="text-primary fw-semibold mb-4"><?= esc($low['nama_perusahaan']) ?></h5>
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <?php if (! empty($low['logo'])): ?>
+                            <img src="<?= base_url('media/logo/' . $low['logo']) ?>" alt="Logo <?= esc($low['nama_perusahaan']) ?>" class="rounded border p-1 bg-white flex-shrink-0" style="width: 64px; height: 64px; object-fit: contain;">
+                        <?php endif; ?>
+                        <div>
+                            <h2 class="fw-bold mb-1"><?= esc($low['jabatan']) ?></h2>
+                            <h5 class="text-primary fw-semibold mb-0"><?= esc($low['nama_perusahaan']) ?></h5>
+                        </div>
+                    </div>
 
                     <div class="row g-3 bg-light rounded-3 p-3 mb-4">
                         <div class="col-sm-6 col-md-3">
