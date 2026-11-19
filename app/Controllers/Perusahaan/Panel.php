@@ -107,14 +107,26 @@ class Panel extends BaseController
             $logoFilename = $newName;
         }
 
-        $nama = trim((string) $this->request->getPost('nama'));
+        $nama  = trim((string) $this->request->getPost('nama'));
+        $email = trim((string) $this->request->getPost('email'));
+
+        if ($email !== '') {
+            $exists = $this->db->table('users')
+                ->where('email', $email)
+                ->where('id !=', $p['user_id'])
+                ->countAllResults();
+            if ($exists > 0) {
+                return redirect()->back()->withInput()->with('error', 'Email tersebut sudah digunakan oleh akun lain.');
+            }
+        }
+
         $this->db->table('perusahaan')->where('id', $p['id'])->update([
             'nama'         => $nama,
             'bidang_usaha' => trim((string) $this->request->getPost('bidang_usaha')),
             'alamat'       => trim((string) $this->request->getPost('alamat')),
             'kota'         => trim((string) $this->request->getPost('kota')),
             'telp'         => trim((string) $this->request->getPost('telp')),
-            'email'        => trim((string) $this->request->getPost('email')),
+            'email'        => $email ?: $p['email'],
             'website'      => trim((string) $this->request->getPost('website')),
             'deskripsi'    => trim((string) $this->request->getPost('deskripsi')),
             'nama_hrd'     => trim((string) $this->request->getPost('nama_hrd')),
@@ -127,6 +139,10 @@ class Panel extends BaseController
             'nama'       => $nama,
             'updated_at' => date('Y-m-d H:i:s'),
         ];
+        if ($email !== '') {
+            $userUpdate['email'] = $email;
+            session()->set('email', $email);
+        }
         $passwordBaru = trim((string) $this->request->getPost('password_baru'));
         if ($passwordBaru !== '') {
             $userUpdate['password'] = password_hash($passwordBaru, PASSWORD_DEFAULT);

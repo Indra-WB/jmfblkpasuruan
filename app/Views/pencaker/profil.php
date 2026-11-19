@@ -179,6 +179,11 @@
                         </div>
 
                         <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Email Login <span class="text-danger">*</span></label>
+                            <input type="email" name="email" value="<?= esc(session()->get('email')) ?>" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
                             <label class="form-label small fw-semibold">Ubah Password Login (Kosongkan jika tidak diganti)</label>
                             <input type="password" name="password_baru" class="form-control" placeholder="Masukkan password baru...">
                         </div>

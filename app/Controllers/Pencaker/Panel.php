@@ -180,10 +180,25 @@ class Panel extends BaseController
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
+        $email = trim((string) $this->request->getPost('email'));
+        if ($email !== '') {
+            $exists = $this->db->table('users')
+                ->where('email', $email)
+                ->where('id !=', $p['user_id'])
+                ->countAllResults();
+            if ($exists > 0) {
+                return redirect()->back()->withInput()->with('error', 'Email tersebut sudah digunakan oleh akun lain.');
+            }
+        }
+
         $userUpdate = [
             'nama'       => $nama,
             'updated_at' => date('Y-m-d H:i:s'),
         ];
+        if ($email !== '') {
+            $userUpdate['email'] = $email;
+            session()->set('email', $email);
+        }
         $passwordBaru = trim((string) $this->request->getPost('password_baru'));
         if ($passwordBaru !== '') {
             $userUpdate['password'] = password_hash($passwordBaru, PASSWORD_DEFAULT);
