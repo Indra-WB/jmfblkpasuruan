@@ -223,7 +223,8 @@ class Panel extends BaseController
                 ->join('users u', 'u.id = pck.user_id')
                 ->join('desa d', 'd.id = pck.desa_id', 'left')
                 ->join('kecamatan k', 'k.id = d.kecamatan_id', 'left')
-                ->where('l.event_perusahaan_id', $ep['id']);
+                ->where('l.event_perusahaan_id', $ep['id'])
+                ->where('u.is_active', 1);
 
             if ($lowonganFilter > 0) {
                 $builder->where('l.lowongan_id', $lowonganFilter);
@@ -446,7 +447,7 @@ class Panel extends BaseController
             JOIN users u ON u.id = pck.user_id
             LEFT JOIN desa d ON d.id = pck.desa_id
             LEFT JOIN kecamatan k ON k.id = d.kecamatan_id
-            WHERE l.event_perusahaan_id = ?
+            WHERE l.event_perusahaan_id = ? AND u.is_active = 1
             ORDER BY l.id ASC
         ", [$ep['id'] ?? 0])->getResultArray();
 
