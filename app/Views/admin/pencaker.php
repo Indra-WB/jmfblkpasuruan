@@ -16,14 +16,19 @@
                         <th>Kontak</th>
                         <th>Link Berkas PDF</th>
                         <th>Status Event & Sesi</th>
-                        <th>Akun</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($pencaker as $p): ?>
                         <tr>
                             <td>
-                                <div class="fw-bold"><?= esc($p['nama']) ?> (<?= esc($p['jk']) ?>)</div>
+                                <div class="fw-bold">
+                                    <?= esc($p['nama']) ?> (<?= esc($p['jk']) ?>)
+                                    <?php if (! $p['is_active']): ?>
+                                        <span class="badge bg-secondary ms-1">Nonaktif</span>
+                                    <?php endif; ?>
+                                </div>
                                 <span class="text-muted"><?= esc($p['nik']) ?></span>
                                 <?php if ($p['disabilitas']): ?>
                                     <span class="badge bg-info text-dark">Disabilitas</span>
@@ -53,11 +58,17 @@
                                     <span class="text-muted">Belum Daftar Event</span>
                                 <?php endif; ?>
                             </td>
-                            <td>
-                                <form method="post" action="<?= base_url('admin/pencaker/toggle/' . $p['user_id']) ?>">
+                            <td class="text-nowrap">
+                                <form method="post" action="<?= base_url('admin/pencaker/reset-password/' . $p['user_id']) ?>" class="d-inline" onsubmit="return confirm('Reset password pencari kerja ini menjadi 123456 ?')">
                                     <?= csrf_field() ?>
-                                    <button type="submit" class="btn btn-sm <?= $p['is_active'] ? 'btn-outline-danger' : 'btn-outline-success' ?>">
-                                        <?= $p['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?>
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Reset Password (123456)">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                </form>
+                                <form method="post" action="<?= base_url('admin/pencaker/toggle/' . $p['user_id']) ?>" class="d-inline" onsubmit="return confirm('<?= $p['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?> akun pencari kerja ini?')">
+                                    <?= csrf_field() ?>
+                                    <button type="submit" class="btn btn-sm <?= $p['is_active'] ? 'btn-outline-danger' : 'btn-outline-success' ?>" title="<?= $p['is_active'] ? 'Nonaktifkan Akun' : 'Aktifkan Akun' ?>">
+                                        <i class="bi <?= $p['is_active'] ? 'bi-slash-circle' : 'bi-check-circle' ?>"></i>
                                     </button>
                                 </form>
                             </td>

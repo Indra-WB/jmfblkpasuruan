@@ -469,6 +469,16 @@ class Panel extends BaseController
         ]);
     }
 
+    public function resetPasswordPencaker(int $userId)
+    {
+        $newPass = '123456';
+        $this->db->table('users')->where('id', $userId)->where('role', 'pencaker')->update([
+            'password'   => password_hash($newPass, PASSWORD_DEFAULT),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        return redirect()->to('/admin/pencaker')->with('success', 'Password akun pencari kerja berhasil di-reset menjadi: ' . $newPass);
+    }
+
     public function toggleUser(int $userId)
     {
         $u = $this->db->table('users')->where('id', $userId)->get()->getRowArray();

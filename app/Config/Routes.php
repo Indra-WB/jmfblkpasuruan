@@ -106,6 +106,7 @@ $routes->group('admin', ['filter' => 'auth:admin'], static function ($routes) {
 
     $routes->get('pencaker', 'Admin\Panel::pencaker');
     $routes->get('pencaker/detail/(:num)', 'Admin\Panel::detailPencaker/$1');
+    $routes->post('pencaker/reset-password/(:num)', 'Admin\Panel::resetPasswordPencaker/$1');
     $routes->post('pencaker/toggle/(:num)', 'Admin\Panel::toggleUser/$1');
 
     $routes->get('pengguna', 'Admin\Panel::pengguna');
