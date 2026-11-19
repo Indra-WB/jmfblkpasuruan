@@ -178,6 +178,11 @@
                             </div>
                         </div>
 
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Ubah Password Login (Kosongkan jika tidak diganti)</label>
+                            <input type="password" name="password_baru" class="form-control" placeholder="Masukkan password baru...">
+                        </div>
+
                         <div class="col-12 pt-2">
                             <button type="submit" class="btn btn-primary fw-semibold px-4">
                                 <i class="bi bi-save me-1"></i> Simpan Biodata & Link Berkas

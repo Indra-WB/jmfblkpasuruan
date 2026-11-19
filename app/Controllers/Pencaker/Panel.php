@@ -180,7 +180,16 @@ class Panel extends BaseController
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $this->db->table('users')->where('id', $p['user_id'])->update(['nama' => $nama]);
+        $userUpdate = [
+            'nama'       => $nama,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+        $passwordBaru = trim((string) $this->request->getPost('password_baru'));
+        if ($passwordBaru !== '') {
+            $userUpdate['password'] = password_hash($passwordBaru, PASSWORD_DEFAULT);
+        }
+
+        $this->db->table('users')->where('id', $p['user_id'])->update($userUpdate);
         session()->set('nama', $nama);
 
         return redirect()->to('/pencaker/profil')->with('success', 'Data profil dan link berkas berhasil disimpan.');
