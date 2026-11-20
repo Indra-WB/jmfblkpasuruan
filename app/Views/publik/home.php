@@ -59,7 +59,7 @@
                         <div class="bg-white text-dark rounded-4 p-4 shadow">
                             <div class="text-success fs-2 mb-1"><i class="bi bi-briefcase-fill"></i></div>
                             <h2 class="fw-bold mb-0"><?= number_format($stats['lowongan']) ?></h2>
-                            <div class="text-muted small">Formasi Jabatan</div>
+                            <div class="text-muted small">Total Formasi Jabatan</div>
                         </div>
                     </div>
                     <div class="col-6">
@@ -216,7 +216,10 @@
                             </div>
                             <div class="d-flex align-items-center gap-3 mb-3">
                                 <?php if (!empty($l['logo'])): ?>
-                                    <img src="<?= base_url('media/logo/' . $l['logo']) ?>" alt="Logo <?= esc($l['nama_perusahaan']) ?>" class="rounded border p-1 bg-white flex-shrink-0" style="width: 48px; height: 48px; object-fit: contain;">
+                                    <img src="<?= base_url('media/logo/' . $l['logo']) ?>"
+                                        alt="Logo <?= esc($l['nama_perusahaan']) ?>"
+                                        class="rounded border p-1 bg-white flex-shrink-0"
+                                        style="width: 48px; height: 48px; object-fit: contain;">
                                 <?php endif; ?>
                                 <div>
                                     <h5 class="fw-bold mb-1"><?= esc($l['jabatan']) ?></h5>
@@ -226,7 +229,8 @@
                             <div class="small text-muted mb-3">
                                 <div><i class="bi bi-mortarboard me-1"></i> Min. <?= esc($l['pendidikan_min']) ?> &bull;
                                     Gender: <?= esc($l['jenis_kelamin']) ?></div>
-                                <div><i class="bi bi-people me-1"></i> Kuota: <strong><?= (int) $l['kuota'] ?> orang</strong>
+                                <div><i class="bi bi-people me-1"></i> Kuota: <strong><?= (int) $l['kuota'] ?>
+                                        orang</strong>
                                 </div>
                                 <div><i class="bi bi-geo-alt me-1"></i> <?= esc($l['lokasi_kerja']) ?></div>
                             </div>

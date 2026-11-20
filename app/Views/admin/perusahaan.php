@@ -105,7 +105,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex flex-column gap-1 align-items-center">
-                                            <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick='editComp(<?= json_encode($p) ?>)' title="Edit"><i class="bi bi-pencil"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="editComp(<?= htmlspecialchars(json_encode($p), ENT_QUOTES, 'UTF-8') ?>)" title="Edit"><i class="bi bi-pencil"></i></button>
                                             <form method="post" action="<?= base_url('admin/perusahaan/reset-password/' . $p['user_id']) ?>" class="w-100" onsubmit="return confirm('Reset password perusahaan ini menjadi Perusahaan123! ?')">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" class="btn btn-sm btn-outline-warning w-100" title="Reset Password"><i class="bi bi-key"></i></button>
@@ -143,6 +143,8 @@
         $('#c_hp_hrd').val(p.hp_hrd);
         $('#c_email').val(p.email_login);
         $('#c_pass').val('');
+        $('html, body').animate({ scrollTop: $('#frmPerusahaan').offset().top - 100 }, 250);
+        $('#c_nama').trigger('focus');
     }
 </script>
 <?= $this->endSection() ?>
