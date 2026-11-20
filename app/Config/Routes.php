@@ -58,6 +58,7 @@ $routes->group('perusahaan', ['filter' => 'auth:perusahaan'], static function ($
     $routes->post('pelamar/status-massal', 'Perusahaan\Panel::updateStatusMassal');
     $routes->get('pelamar/export-excel', 'Perusahaan\Panel::exportExcel');
     $routes->get('penempatan', 'Perusahaan\Panel::penempatan');
+    $routes->get('penempatan/excel', 'Perusahaan\Panel::exportPenempatanExcel');
     $routes->get('poster-qr', 'Perusahaan\Panel::posterQr');
     $routes->get('survei', 'Perusahaan\Panel::survei');
     $routes->post('survei', 'Perusahaan\Panel::saveSurvei');

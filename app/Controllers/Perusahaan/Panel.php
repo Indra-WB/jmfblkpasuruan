@@ -528,32 +528,132 @@ class Panel extends BaseController
             ->setBody($excelOutput);
     }
 
-    public function penempatan()
+    private function getRekapPenempatan(): array
     {
         $ep = $this->getEventPerusahaan();
-        $rekap = [];
-        if ($ep) {
-            $rekap = $this->db->query("
-                SELECT l.id, l.jabatan, l.kuota,
-                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 THEN 1 ELSE 0 END), 0) AS total_pelamar,
-                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'LolosBerkas' THEN 1 ELSE 0 END), 0) AS lolos_berkas,
-                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'PanggilTes' THEN 1 ELSE 0 END), 0) AS panggil_tes,
-                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Diterima' THEN 1 ELSE 0 END), 0) AS diterima,
-                       COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Ditolak' THEN 1 ELSE 0 END), 0) AS ditolak
-                FROM lowongan l
-                LEFT JOIN lamaran lam ON lam.lowongan_id = l.id
-                LEFT JOIN event_peserta eps ON eps.id = lam.event_peserta_id
-                LEFT JOIN pencaker pck ON pck.id = eps.pencaker_id
-                LEFT JOIN users u_pck ON u_pck.id = pck.user_id
-                WHERE l.event_perusahaan_id = ? AND l.is_active = 1
-                GROUP BY l.id
-            ", [$ep['id']])->getResultArray();
+        if (! $ep) {
+            return [];
         }
 
+        return $this->db->query("
+            SELECT l.id, l.jabatan, l.kuota,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 THEN 1 ELSE 0 END), 0) AS total_pelamar,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'LolosBerkas' THEN 1 ELSE 0 END), 0) AS lolos_berkas,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'PanggilTes' THEN 1 ELSE 0 END), 0) AS panggil_tes,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Diterima' THEN 1 ELSE 0 END), 0) AS diterima,
+                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Ditolak' THEN 1 ELSE 0 END), 0) AS ditolak
+            FROM lowongan l
+            LEFT JOIN lamaran lam ON lam.lowongan_id = l.id
+            LEFT JOIN event_peserta eps ON eps.id = lam.event_peserta_id
+            LEFT JOIN pencaker pck ON pck.id = eps.pencaker_id
+            LEFT JOIN users u_pck ON u_pck.id = pck.user_id
+            WHERE l.event_perusahaan_id = ? AND l.is_active = 1
+            GROUP BY l.id
+        ", [$ep['id']])->getResultArray();
+    }
+
+    public function penempatan()
+    {
         return $this->renderView('perusahaan/penempatan', [
             'title' => 'Rekapitulasi Hasil Penempatan Tenaga Kerja',
-            'rekap' => $rekap,
+            'rekap' => $this->getRekapPenempatan(),
         ]);
+    }
+
+    public function exportPenempatanExcel()
+    {
+        $p     = $this->getPerusahaan();
+        $rekap = $this->getRekapPenempatan();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Rekap Penempatan');
+
+        $sheet->setCellValue('A1', 'REKAPITULASI HASIL SELEKSI & PENEMPATAN TENAGA KERJA');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+        $sheet->setCellValue('A2', strtoupper($p['nama'] ?? 'PERUSAHAAN'));
+        $sheet->getStyle('A2')->getFont()->setBold(true);
+
+        $headers = [
+            'No',
+            'Lowongan Jabatan',
+            'Kuota Kebutuhan',
+            'Total Pelamar',
+            'Lolos Berkas',
+            'Panggil Tes',
+            'Diterima Bekerja',
+            'Ditolak',
+            '% Penempatan',
+        ];
+        $col = 'A';
+        foreach ($headers as $h) {
+            $sheet->setCellValue($col . '4', $h);
+            $sheet->getStyle($col . '4')->getFont()->setBold(true);
+            $col++;
+        }
+
+        $rNum = 5;
+        $totKuota   = 0;
+        $totPelamar = 0;
+        $totLolos   = 0;
+        $totPanggil = 0;
+        $totTerima  = 0;
+        $totTolak   = 0;
+
+        foreach ($rekap as $idx => $r) {
+            $kuota   = (int) ($r['kuota'] ?? 0);
+            $pelamar = (int) ($r['total_pelamar'] ?? 0);
+            $lolos   = (int) ($r['lolos_berkas'] ?? 0);
+            $panggil = (int) ($r['panggil_tes'] ?? 0);
+            $terima  = (int) ($r['diterima'] ?? 0);
+            $tolak   = (int) ($r['ditolak'] ?? 0);
+            $persen  = $kuota > 0 ? round(($terima / $kuota) * 100, 1) : 0;
+
+            $totKuota   += $kuota;
+            $totPelamar += $pelamar;
+            $totLolos   += $lolos;
+            $totPanggil += $panggil;
+            $totTerima  += $terima;
+            $totTolak   += $tolak;
+
+            $sheet->setCellValue('A' . $rNum, $idx + 1);
+            $sheet->setCellValue('B' . $rNum, $r['jabatan']);
+            $sheet->setCellValue('C' . $rNum, $kuota);
+            $sheet->setCellValue('D' . $rNum, $pelamar);
+            $sheet->setCellValue('E' . $rNum, $lolos);
+            $sheet->setCellValue('F' . $rNum, $panggil);
+            $sheet->setCellValue('G' . $rNum, $terima);
+            $sheet->setCellValue('H' . $rNum, $tolak);
+            $sheet->setCellValue('I' . $rNum, $persen . '%');
+            $rNum++;
+        }
+
+        $totPersen = $totKuota > 0 ? round(($totTerima / $totKuota) * 100, 1) : 0;
+        $sheet->setCellValue('A' . $rNum, '');
+        $sheet->setCellValue('B' . $rNum, 'Total Keseluruhan');
+        $sheet->setCellValue('C' . $rNum, $totKuota);
+        $sheet->setCellValue('D' . $rNum, $totPelamar);
+        $sheet->setCellValue('E' . $rNum, $totLolos);
+        $sheet->setCellValue('F' . $rNum, $totPanggil);
+        $sheet->setCellValue('G' . $rNum, $totTerima);
+        $sheet->setCellValue('H' . $rNum, $totTolak);
+        $sheet->setCellValue('I' . $rNum, $totPersen . '%');
+        $sheet->getStyle('A' . $rNum . ':I' . $rNum)->getFont()->setBold(true);
+
+        foreach (range('A', 'I') as $c) {
+            $sheet->getColumnDimension($c)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $excelOutput = ob_get_clean();
+
+        $filename = 'Rekap-Penempatan-' . url_title($p['nama'] ?? 'Perusahaan', '-', true) . '.xlsx';
+        return $this->response
+            ->setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($excelOutput);
     }
 
     public function posterQr()

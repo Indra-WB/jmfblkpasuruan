@@ -2,9 +2,12 @@
 
 <?= $this->section('content') ?>
 <div class="card stat-card">
-    <div class="card-header bg-white py-3">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h6 class="fw-bold mb-0"><i class="bi bi-award text-success me-1"></i> Rekapitulasi Hasil Seleksi & Penempatan
             Kerja per Lowongan Jabatan</h6>
+        <a href="<?= base_url('perusahaan/penempatan/excel') ?>" class="btn btn-sm btn-success fw-semibold">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel (.xlsx)
+        </a>
     </div>
     <div class="card-body">
         <div class="table-responsive">
