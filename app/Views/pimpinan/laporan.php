@@ -11,7 +11,7 @@
             <i class="bi bi-file-earmark-pdf-fill me-1"></i> Cetak Laporan Resmi Berkop BLK (PDF)
         </a>
         <a href="<?= base_url('pimpinan/laporan/excel/lengkap') ?>" class="btn btn-success fw-semibold">
-            <i class="bi bi-file-earmark-excel-fill me-1"></i> Unduh Rekap Excel (.xlsx)
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Unduh Rekap Excel
         </a>
     </div>
 </div>

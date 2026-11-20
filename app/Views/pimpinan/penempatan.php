@@ -6,7 +6,7 @@
         <h6 class="fw-bold mb-0"><i class="bi bi-award text-success me-1"></i> Rekapitulasi Hasil Seleksi & Penempatan
             Kerja Seluruh Perusahaan per Lowongan Jabatan</h6>
         <a href="<?= base_url('pimpinan/penempatan/excel') ?>" class="btn btn-sm btn-success fw-semibold">
-            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel (.xlsx)
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
         </a>
     </div>
     <div class="card-body">
@@ -28,35 +28,36 @@
                 </thead>
                 <tbody>
                     <?php
-                        $totKuota   = 0;
-                        $totPelamar = 0;
-                        $totLolos   = 0;
-                        $totPanggil = 0;
-                        $totTerima  = 0;
-                        $totTolak   = 0;
+                    $totKuota = 0;
+                    $totPelamar = 0;
+                    $totLolos = 0;
+                    $totPanggil = 0;
+                    $totTerima = 0;
+                    $totTolak = 0;
                     ?>
                     <?php foreach ($rekap as $r): ?>
                         <?php
-                            $kuota   = (int) ($r['kuota'] ?? 0);
-                            $pelamar = (int) ($r['total_pelamar'] ?? 0);
-                            $lolos   = (int) ($r['lolos_berkas'] ?? 0);
-                            $panggil = (int) ($r['panggil_tes'] ?? 0);
-                            $terima  = (int) ($r['diterima'] ?? 0);
-                            $tolak   = (int) ($r['ditolak'] ?? 0);
-                            $persen  = $kuota > 0 ? round(($terima / $kuota) * 100, 1) : 0;
+                        $kuota = (int) ($r['kuota'] ?? 0);
+                        $pelamar = (int) ($r['total_pelamar'] ?? 0);
+                        $lolos = (int) ($r['lolos_berkas'] ?? 0);
+                        $panggil = (int) ($r['panggil_tes'] ?? 0);
+                        $terima = (int) ($r['diterima'] ?? 0);
+                        $tolak = (int) ($r['ditolak'] ?? 0);
+                        $persen = $kuota > 0 ? round(($terima / $kuota) * 100, 1) : 0;
 
-                            $totKuota   += $kuota;
-                            $totPelamar += $pelamar;
-                            $totLolos   += $lolos;
-                            $totPanggil += $panggil;
-                            $totTerima  += $terima;
-                            $totTolak   += $tolak;
+                        $totKuota += $kuota;
+                        $totPelamar += $pelamar;
+                        $totLolos += $lolos;
+                        $totPanggil += $panggil;
+                        $totTerima += $terima;
+                        $totTolak += $tolak;
                         ?>
                         <tr>
-                            <td class="text-center"><span class="badge bg-primary"><?= esc($r['no_booth'] ?? '-') ?></span></td>
+                            <td class="text-center"><span class="badge bg-primary"><?= esc($r['no_booth'] ?? '-') ?></span>
+                            </td>
                             <td class="fw-semibold"><?= esc($r['nama_perusahaan']) ?></td>
                             <td class="fw-bold">
-                                <?php if (! empty($r['jabatan'])): ?>
+                                <?php if (!empty($r['jabatan'])): ?>
                                     <?= esc($r['jabatan']) ?>
                                 <?php else: ?>
                                     <span class="text-muted fw-normal fst-italic">Belum ada lowongan</span>
