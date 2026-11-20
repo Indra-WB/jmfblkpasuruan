@@ -107,7 +107,7 @@
 
                     <div class="d-flex flex-wrap gap-2">
                         <a href="<?= base_url('pencaker/kartu-qr') ?>" target="_blank" class="btn btn-danger fw-semibold">
-                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Kartu Peserta (PDF)
+                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Download Kartu Peserta (PDF)
                         </a>
                         <a href="<?= base_url('pencaker/scan-booth') ?>" class="btn btn-primary fw-semibold">
                             <i class="bi bi-qr-code-scan me-1"></i> Scan QR Booth (Lamar Kerja)
