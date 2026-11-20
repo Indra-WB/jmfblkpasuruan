@@ -208,7 +208,7 @@ class Dashboard extends BaseController
         ]);
     }
 
-    public function penempatan()
+    private function getRekapPenempatan(): array
     {
         $event = $this->activeEvent;
         $params = [];
@@ -218,7 +218,7 @@ class Dashboard extends BaseController
             $params[] = $event['id'];
         }
 
-        $rekap = $this->db->query("
+        return $this->db->query("
             SELECT l.id, l.jabatan, COALESCE(l.kuota, 0) AS kuota,
                    p.nama AS nama_perusahaan, ep.no_booth,
                    COALESCE(SUM(CASE WHEN u_pck.is_active = 1 THEN 1 ELSE 0 END), 0) AS total_pelamar,
@@ -238,11 +238,115 @@ class Dashboard extends BaseController
             GROUP BY ep.id, l.id
             ORDER BY ep.no_booth ASC, p.nama ASC, l.id ASC
         ", $params)->getResultArray();
+    }
 
+    public function penempatan()
+    {
         return $this->renderView('pimpinan/penempatan', [
             'title' => 'Rekapitulasi Hasil Penempatan Tenaga Kerja',
-            'rekap' => $rekap,
+            'rekap' => $this->getRekapPenempatan(),
         ]);
+    }
+
+    public function exportPenempatanExcel()
+    {
+        $event = $this->activeEvent;
+        $rekap = $this->getRekapPenempatan();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Rekap Penempatan');
+
+        $sheet->setCellValue('A1', 'REKAPITULASI HASIL SELEKSI & PENEMPATAN TENAGA KERJA');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+        $sheet->setCellValue('A2', strtoupper($event['nama'] ?? 'JOB MARKET FAIR UPT BLK PASURUAN'));
+        $sheet->getStyle('A2')->getFont()->setBold(true);
+
+        $headers = [
+            'No',
+            'Booth',
+            'Perusahaan',
+            'Lowongan Jabatan',
+            'Kuota Kebutuhan',
+            'Total Pelamar',
+            'Lolos Berkas',
+            'Panggil Tes',
+            'Diterima Bekerja',
+            'Ditolak',
+            '% Penempatan',
+        ];
+        $col = 'A';
+        foreach ($headers as $h) {
+            $sheet->setCellValue($col . '4', $h);
+            $sheet->getStyle($col . '4')->getFont()->setBold(true);
+            $col++;
+        }
+
+        $rNum = 5;
+        $totKuota   = 0;
+        $totPelamar = 0;
+        $totLolos   = 0;
+        $totPanggil = 0;
+        $totTerima  = 0;
+        $totTolak   = 0;
+
+        foreach ($rekap as $idx => $r) {
+            $kuota   = (int) ($r['kuota'] ?? 0);
+            $pelamar = (int) ($r['total_pelamar'] ?? 0);
+            $lolos   = (int) ($r['lolos_berkas'] ?? 0);
+            $panggil = (int) ($r['panggil_tes'] ?? 0);
+            $terima  = (int) ($r['diterima'] ?? 0);
+            $tolak   = (int) ($r['ditolak'] ?? 0);
+            $persen  = $kuota > 0 ? round(($terima / $kuota) * 100, 1) : 0;
+
+            $totKuota   += $kuota;
+            $totPelamar += $pelamar;
+            $totLolos   += $lolos;
+            $totPanggil += $panggil;
+            $totTerima  += $terima;
+            $totTolak   += $tolak;
+
+            $sheet->setCellValue('A' . $rNum, $idx + 1);
+            $sheet->setCellValue('B' . $rNum, $r['no_booth'] ?? '-');
+            $sheet->setCellValue('C' . $rNum, $r['nama_perusahaan']);
+            $sheet->setCellValue('D' . $rNum, ! empty($r['jabatan']) ? $r['jabatan'] : 'Belum ada lowongan');
+            $sheet->setCellValue('E' . $rNum, $kuota);
+            $sheet->setCellValue('F' . $rNum, $pelamar);
+            $sheet->setCellValue('G' . $rNum, $lolos);
+            $sheet->setCellValue('H' . $rNum, $panggil);
+            $sheet->setCellValue('I' . $rNum, $terima);
+            $sheet->setCellValue('J' . $rNum, $tolak);
+            $sheet->setCellValue('K' . $rNum, $persen . '%');
+            $rNum++;
+        }
+
+        $totPersen = $totKuota > 0 ? round(($totTerima / $totKuota) * 100, 1) : 0;
+        $sheet->setCellValue('A' . $rNum, '');
+        $sheet->setCellValue('B' . $rNum, '');
+        $sheet->setCellValue('C' . $rNum, '');
+        $sheet->setCellValue('D' . $rNum, 'Total Keseluruhan');
+        $sheet->setCellValue('E' . $rNum, $totKuota);
+        $sheet->setCellValue('F' . $rNum, $totPelamar);
+        $sheet->setCellValue('G' . $rNum, $totLolos);
+        $sheet->setCellValue('H' . $rNum, $totPanggil);
+        $sheet->setCellValue('I' . $rNum, $totTerima);
+        $sheet->setCellValue('J' . $rNum, $totTolak);
+        $sheet->setCellValue('K' . $rNum, $totPersen . '%');
+        $sheet->getStyle('A' . $rNum . ':K' . $rNum)->getFont()->setBold(true);
+
+        foreach (range('A', 'K') as $c) {
+            $sheet->getColumnDimension($c)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $excelOutput = ob_get_clean();
+
+        return $this->response
+            ->setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment; filename="Rekap-Penempatan-JMF-BLK-Pasuruan.xlsx"')
+            ->setBody($excelOutput);
     }
 
     public function laporan()
