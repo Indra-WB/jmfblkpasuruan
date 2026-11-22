@@ -122,10 +122,12 @@ class Panel extends BaseController
         if ($event) {
             $sesiList = $this->db->query("
                 SELECT s.*,
-                       COUNT(ep.id) AS terisi,
-                       SUM(CASE WHEN ep.checkin_at IS NOT NULL THEN 1 ELSE 0 END) AS hadir
+                       COALESCE(SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END), 0) AS terisi,
+                       COALESCE(SUM(CASE WHEN u.is_active = 1 AND ep.checkin_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS hadir
                 FROM event_sesi s
                 LEFT JOIN event_peserta ep ON ep.sesi_id = s.id
+                LEFT JOIN pencaker pck ON pck.id = ep.pencaker_id
+                LEFT JOIN users u ON u.id = pck.user_id
                 WHERE s.event_id = ?
                 GROUP BY s.id
                 ORDER BY s.urutan ASC, s.jam_mulai ASC
@@ -135,14 +137,18 @@ class Panel extends BaseController
                 SELECT ep.*, pck.nik, pck.nama, pck.hp, s.nama AS nama_sesi
                 FROM event_peserta ep
                 JOIN pencaker pck ON pck.id = ep.pencaker_id
+                JOIN users u ON u.id = pck.user_id
                 LEFT JOIN event_sesi s ON s.id = ep.sesi_id
-                WHERE ep.event_id = ?
+                WHERE ep.event_id = ? AND u.is_active = 1
                 ORDER BY ep.id DESC
             ", [$event['id']])->getResultArray();
 
-            $tanpaSesiCount = (int) $this->db->table('event_peserta')
-                ->where('event_id', $event['id'])
-                ->where('sesi_id IS NULL')
+            $tanpaSesiCount = (int) $this->db->table('event_peserta ep')
+                ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+                ->join('users u', 'u.id = pck.user_id')
+                ->where('ep.event_id', $event['id'])
+                ->where('ep.sesi_id IS NULL')
+                ->where('u.is_active', 1)
                 ->countAllResults();
         }
 
@@ -221,18 +227,25 @@ class Panel extends BaseController
         }
 
         $sesiRows = $this->db->query("
-            SELECT s.id, s.kuota, COUNT(ep.id) AS terisi
+            SELECT s.id, s.kuota,
+                   COALESCE(SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END), 0) AS terisi
             FROM event_sesi s
             LEFT JOIN event_peserta ep ON ep.sesi_id = s.id
+            LEFT JOIN pencaker pck ON pck.id = ep.pencaker_id
+            LEFT JOIN users u ON u.id = pck.user_id
             WHERE s.event_id = ?
             GROUP BY s.id
             ORDER BY s.urutan ASC
         ", [$event['id']])->getResultArray();
 
-        $tanpaSesi = $this->db->table('event_peserta')
-            ->where('event_id', $event['id'])
-            ->where('sesi_id IS NULL')
-            ->orderBy('id', 'ASC')
+        $tanpaSesi = $this->db->table('event_peserta ep')
+            ->select('ep.*')
+            ->join('pencaker pck', 'pck.id = ep.pencaker_id')
+            ->join('users u', 'u.id = pck.user_id')
+            ->where('ep.event_id', $event['id'])
+            ->where('ep.sesi_id IS NULL')
+            ->where('u.is_active', 1)
+            ->orderBy('ep.id', 'ASC')
             ->get()
             ->getResultArray();
 
