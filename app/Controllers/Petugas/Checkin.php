@@ -7,49 +7,63 @@ use App\Libraries\JmfService;
 
 class Checkin extends BaseController
 {
-    public function index()
+    private function getDashboardStats(array $event): array
     {
-        $event = $this->activeEvent;
         $stats = [
-            'total_terdaftar' => 0,
-            'total_hadir'     => 0,
+            'total_terdaftar' => (int) $this->db->table('event_peserta')->where('event_id', $event['id'])->countAllResults(),
+            'total_hadir'     => (int) $this->db->table('event_peserta')->where('event_id', $event['id'])->where('checkin_at IS NOT NULL')->countAllResults(),
         ];
+        $stats['belum_checkin'] = max(0, $stats['total_terdaftar'] - $stats['total_hadir']);
+
         $sesiStats = [];
-        $recentCheckin = [];
-
-        if ($event) {
-            $stats['total_terdaftar'] = (int) $this->db->table('event_peserta')->where('event_id', $event['id'])->countAllResults();
-            $stats['total_hadir']     = (int) $this->db->table('event_peserta')->where('event_id', $event['id'])->where('checkin_at IS NOT NULL')->countAllResults();
-
-            if (! empty($event['sesi_aktif'])) {
-                $sesiStats = $this->db->query("
-                    SELECT s.*,
-                           COUNT(ep.id) AS terdaftar,
-                           SUM(CASE WHEN ep.checkin_at IS NOT NULL THEN 1 ELSE 0 END) AS hadir
-                    FROM event_sesi s
-                    LEFT JOIN event_peserta ep ON ep.sesi_id = s.id
-                    WHERE s.event_id = ?
-                    GROUP BY s.id
-                    ORDER BY s.urutan ASC
-                ", [$event['id']])->getResultArray();
-            }
-
-            $recentCheckin = $this->db->query("
-                SELECT ep.no_registrasi, ep.checkin_at, ep.checkin_luar_sesi, pck.nik, pck.nama, s.nama AS nama_sesi
-                FROM event_peserta ep
-                JOIN pencaker pck ON pck.id = ep.pencaker_id
-                LEFT JOIN event_sesi s ON s.id = ep.sesi_id
-                WHERE ep.event_id = ? AND ep.checkin_at IS NOT NULL
-                ORDER BY ep.checkin_at DESC
-                LIMIT 10
+        if (! empty($event['sesi_aktif'])) {
+            $sesiStats = $this->db->query("
+                SELECT s.*,
+                       COUNT(ep.id) AS terdaftar,
+                       SUM(CASE WHEN ep.checkin_at IS NOT NULL THEN 1 ELSE 0 END) AS hadir
+                FROM event_sesi s
+                LEFT JOIN event_peserta ep ON ep.sesi_id = s.id
+                WHERE s.event_id = ?
+                GROUP BY s.id
+                ORDER BY s.urutan ASC
             ", [$event['id']])->getResultArray();
         }
 
-        return $this->renderView('petugas/scanner', [
-            'title'         => 'Meja Registrasi & Scanner Check-in Peserta',
+        $recentCheckin = $this->db->query("
+            SELECT ep.no_registrasi, ep.checkin_at, ep.checkin_luar_sesi, pck.nik, pck.nama, s.nama AS nama_sesi
+            FROM event_peserta ep
+            JOIN pencaker pck ON pck.id = ep.pencaker_id
+            LEFT JOIN event_sesi s ON s.id = ep.sesi_id
+            WHERE ep.event_id = ? AND ep.checkin_at IS NOT NULL
+            ORDER BY ep.checkin_at DESC
+            LIMIT 10
+        ", [$event['id']])->getResultArray();
+
+        foreach ($recentCheckin as &$rc) {
+            $rc['jam_checkin'] = date('H:i:s', strtotime($rc['checkin_at']));
+        }
+
+        return [
             'stats'         => $stats,
             'sesiStats'     => $sesiStats,
             'recentCheckin' => $recentCheckin,
+        ];
+    }
+
+    public function index()
+    {
+        $event = $this->activeEvent;
+        $data = $event ? $this->getDashboardStats($event) : [
+            'stats'         => ['total_terdaftar' => 0, 'total_hadir' => 0, 'belum_checkin' => 0],
+            'sesiStats'     => [],
+            'recentCheckin' => [],
+        ];
+
+        return $this->renderView('petugas/scanner', [
+            'title'         => 'Meja Registrasi & Scanner Check-in Peserta',
+            'stats'         => $data['stats'],
+            'sesiStats'     => $data['sesiStats'],
+            'recentCheckin' => $data['recentCheckin'],
         ]);
     }
 
@@ -101,6 +115,7 @@ class Checkin extends BaseController
     {
         $pesertaId = (int) $this->request->getPost('event_peserta_id');
         $event = $this->activeEvent;
+        $isAjax = $this->request->isAJAX();
 
         $row = $this->db->table('event_peserta ep')
             ->select('ep.*, pck.nama, s.id AS s_id, s.nama AS nama_sesi, s.tanggal AS tgl_sesi, s.jam_mulai, s.jam_selesai')
@@ -111,11 +126,19 @@ class Checkin extends BaseController
             ->getRowArray();
 
         if (! $row) {
-            return redirect()->to('/petugas')->with('error', 'Peserta tidak ditemukan.');
+            $msg = 'Peserta tidak ditemukan.';
+            if ($isAjax) {
+                return $this->response->setJSON(['ok' => false, 'msg' => $msg, 'csrfHash' => csrf_hash()]);
+            }
+            return redirect()->to('/petugas')->with('error', $msg);
         }
 
         if (! empty($row['checkin_at'])) {
-            return redirect()->to('/petugas')->with('error', 'Peserta ' . $row['nama'] . ' sudah tercatat Check-in sebelumnya pada ' . $row['checkin_at']);
+            $msg = 'Peserta ' . $row['nama'] . ' sudah tercatat Check-in sebelumnya pada ' . $row['checkin_at'];
+            if ($isAjax) {
+                return $this->response->setJSON(['ok' => false, 'msg' => $msg, 'csrfHash' => csrf_hash()]);
+            }
+            return redirect()->to('/petugas')->with('error', $msg);
         }
 
         $sesiObj = $row['s_id'] ? [
@@ -128,17 +151,35 @@ class Checkin extends BaseController
 
         $evalSesi = JmfService::evaluateSesiStatus($event, $sesiObj);
         if (! $evalSesi['allowed']) {
-            return redirect()->to('/petugas')->with('error', 'Check-in Ditolak: ' . $evalSesi['label'] . ' (Aturan event menolak peserta di luar jam sesi).');
+            $msg = 'Check-in Ditolak: ' . $evalSesi['label'] . ' (Aturan event menolak peserta di luar jam sesi).';
+            if ($isAjax) {
+                return $this->response->setJSON(['ok' => false, 'msg' => $msg, 'csrfHash' => csrf_hash()]);
+            }
+            return redirect()->to('/petugas')->with('error', $msg);
         }
 
+        $now = date('Y-m-d H:i:s');
         $this->db->table('event_peserta')->where('id', $pesertaId)->update([
-            'checkin_at'        => date('Y-m-d H:i:s'),
+            'checkin_at'        => $now,
             'checkin_by'        => session()->get('user_id'),
             'checkin_luar_sesi' => $evalSesi['luar'],
-            'updated_at'        => date('Y-m-d H:i:s'),
+            'updated_at'        => $now,
         ]);
 
-        return redirect()->to('/petugas')->with('success', 'Check-in BERHASIL untuk peserta: ' . $row['nama'] . ' (' . $row['no_registrasi'] . ').');
+        $msg = 'Check-in BERHASIL untuk peserta: ' . $row['nama'] . ' (' . $row['no_registrasi'] . ').';
+        if ($isAjax) {
+            $dash = $event ? $this->getDashboardStats($event) : [];
+            return $this->response->setJSON([
+                'ok'            => true,
+                'msg'           => $msg,
+                'csrfHash'      => csrf_hash(),
+                'stats'         => $dash['stats'] ?? null,
+                'sesiStats'     => $dash['sesiStats'] ?? [],
+                'recentCheckin' => $dash['recentCheckin'] ?? [],
+            ]);
+        }
+
+        return redirect()->to('/petugas')->with('success', $msg);
     }
 
     public function cari()

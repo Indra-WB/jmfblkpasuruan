@@ -5,22 +5,27 @@
     <div class="col-4">
         <div class="card stat-card p-2 p-md-3 h-100 justify-content-between border-start border-4 border-primary">
             <div class="small text-muted">Total Terdaftar</div>
-            <h3 class="fw-bold mb-0"><?= number_format($stats['total_terdaftar']) ?></h3>
+            <h3 class="fw-bold mb-0" id="stTotalTerdaftar"><?= number_format($stats['total_terdaftar']) ?></h3>
         </div>
     </div>
     <div class="col-4">
         <div class="card stat-card p-2 p-md-3 h-100 justify-content-between border-start border-4 border-success">
             <div class="small text-muted">Sudah Check-in</div>
-            <h3 class="fw-bold text-success mb-0"><?= number_format($stats['total_hadir']) ?></h3>
+            <h3 class="fw-bold text-success mb-0" id="stTotalHadir"><?= number_format($stats['total_hadir']) ?></h3>
         </div>
     </div>
     <div class="col-4">
         <div class="card stat-card p-2 p-md-3 h-100 justify-content-between border-start border-4 border-warning">
             <div class="small text-muted">Belum Check-in</div>
-            <h3 class="fw-bold text-warning mb-0">
+            <h3 class="fw-bold text-warning mb-0" id="stBelumCheckin">
                 <?= number_format(max(0, $stats['total_terdaftar'] - $stats['total_hadir'])) ?></h3>
         </div>
     </div>
+</div>
+
+<div id="ajaxAlertBox" style="display:none;" class="alert alert-dismissible fade show shadow-sm mb-3">
+    <span id="ajaxAlertText"></span>
+    <button type="button" class="btn-close" onclick="$('#ajaxAlertBox').hide();"></button>
 </div>
 
 <div class="row g-4">
@@ -108,7 +113,7 @@
                                 <th class="text-center">Hadir</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tbSesiStats">
                             <?php foreach ($sesiStats as $s): ?>
                                 <tr>
                                     <td class="fw-semibold"><?= esc($s['nama']) ?></td>
@@ -141,7 +146,7 @@
                                 <th>Sesi</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tbRecentCheckin">
                             <?php foreach ($recentCheckin as $rc): ?>
                                 <tr>
                                     <td class="fw-semibold text-success">
@@ -173,6 +178,20 @@
 <script>
     let csrfName = '<?= csrf_token() ?>';
     let csrfHash = '<?= csrf_hash() ?>';
+    let lastScannedCode = '';
+    let lastScannedTime = 0;
+
+    function escHtml(str) {
+        return $('<div>').text(str || '').html();
+    }
+
+    function showAjaxAlert(type, msg) {
+        const $box = $('#ajaxAlertBox');
+        const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+        $box.removeClass('alert-success alert-danger').addClass('alert-' + type);
+        $('#ajaxAlertText').html(`<i class="bi ${icon} me-2"></i>${escHtml(msg)}`);
+        $box.stop(true, true).fadeIn(150);
+    }
 
     function verifyPeserta(kode) {
         if (!kode) return;
@@ -182,10 +201,11 @@
         }, function (res) {
             if (res.csrfHash) csrfHash = res.csrfHash;
             if (!res.ok) {
-                alert(res.msg);
+                showAjaxAlert('danger', res.msg);
                 $('#boxResult').hide();
                 return;
             }
+            $('#ajaxAlertBox').hide();
             const p = res.peserta;
             const ev = res.evalSesi;
             $('#resPesertaId').val(p.id);
@@ -221,6 +241,75 @@
         verifyPeserta($('#txtKode').val().trim());
     });
 
+    $('#frmConfirmCheckin').on('submit', function (e) {
+        e.preventDefault();
+        const pesertaId = $('#resPesertaId').val();
+        if (!pesertaId) return;
+
+        const $btn = $('#btnSubmitCheckin');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Memproses...');
+
+        $.post('<?= base_url('petugas/confirm') ?>', {
+            event_peserta_id: pesertaId,
+            [csrfName]: csrfHash
+        }, function (res) {
+            if (res.csrfHash) csrfHash = res.csrfHash;
+            if (!res.ok) {
+                showAjaxAlert('danger', res.msg);
+                $btn.prop('disabled', false).html('<i class="bi bi-check2-circle me-1"></i> KONFIRMASI CHECK-IN SEKARANG');
+                return;
+            }
+
+            showAjaxAlert('success', res.msg);
+            $('#boxResult').slideUp(150);
+            $('#txtKode').val('').trigger('focus');
+
+            if (res.stats) {
+                $('#stTotalTerdaftar').text(Number(res.stats.total_terdaftar).toLocaleString('id-ID'));
+                $('#stTotalHadir').text(Number(res.stats.total_hadir).toLocaleString('id-ID'));
+                $('#stBelumCheckin').text(Number(res.stats.belum_checkin).toLocaleString('id-ID'));
+            }
+
+            if (res.sesiStats && $('#tbSesiStats').length) {
+                let sesiHtml = '';
+                res.sesiStats.forEach(function (s) {
+                    const jamMulai = (s.jam_mulai || '').substring(0, 5);
+                    const jamSelesai = (s.jam_selesai || '').substring(0, 5);
+                    sesiHtml += `<tr>
+                        <td class="fw-semibold">${escHtml(s.nama)}</td>
+                        <td class="small">${escHtml(jamMulai)} - ${escHtml(jamSelesai)}</td>
+                        <td class="text-center">${Number(s.kuota || 0)}</td>
+                        <td class="text-center">${Number(s.terdaftar || 0)}</td>
+                        <td class="text-center fw-bold text-success">${Number(s.hadir || 0)}</td>
+                    </tr>`;
+                });
+                $('#tbSesiStats').html(sesiHtml);
+            }
+
+            if (res.recentCheckin) {
+                let rcHtml = '';
+                res.recentCheckin.forEach(function (rc) {
+                    const luarBadge = Number(rc.checkin_luar_sesi) === 1
+                        ? ' <span class="badge bg-warning text-dark">Luar Sesi</span>'
+                        : '';
+                    rcHtml += `<tr>
+                        <td class="fw-semibold text-success">${escHtml(rc.jam_checkin)}</td>
+                        <td>${escHtml(rc.no_registrasi)}</td>
+                        <td>
+                            <div class="fw-bold">${escHtml(rc.nama)}</div>
+                            <span class="text-muted">${escHtml(rc.nik)}</span>
+                        </td>
+                        <td>${escHtml(rc.nama_sesi || 'Bebas')}${luarBadge}</td>
+                    </tr>`;
+                });
+                $('#tbRecentCheckin').html(rcHtml);
+            }
+        }, 'json').fail(function () {
+            showAjaxAlert('danger', 'Terjadi kesalahan jaringan saat memproses check-in. Silakan coba lagi.');
+            $btn.prop('disabled', false).html('<i class="bi bi-check2-circle me-1"></i> KONFIRMASI CHECK-IN SEKARANG');
+        });
+    });
+
     $('#btnCariNama').on('click', function () {
         const q = $('#txtCariNama').val().trim();
         if (q.length < 3) return;
@@ -229,7 +318,7 @@
             rows.forEach(function (r) {
                 const badge = r.checkin_at ? '<span class="badge bg-success">Sudah Hadir</span>' : '<span class="badge bg-warning text-dark">Belum Check-in</span>';
                 html += `<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="verifyPeserta('${r.qr_token}')">
-                    <div><strong>${r.nama}</strong> (${r.nik})<br><small class="text-muted">${r.no_registrasi} | ${r.nama_sesi || '-'}</small></div>
+                    <div><strong>${escHtml(r.nama)}</strong> (${escHtml(r.nik)})<br><small class="text-muted">${escHtml(r.no_registrasi)} | ${escHtml(r.nama_sesi || '-')}</small></div>
                     ${badge}
                 </button>`;
             });
@@ -240,6 +329,12 @@
     try {
         const scanner = new Html5QrcodeScanner("qrReader", { fps: 10, qrbox: { width: 220, height: 220 } }, false);
         scanner.render(function (decodedText) {
+            const now = Date.now();
+            if (decodedText === lastScannedCode && (now - lastScannedTime) < 2500) {
+                return;
+            }
+            lastScannedCode = decodedText;
+            lastScannedTime = now;
             $('#txtKode').val(decodedText);
             verifyPeserta(decodedText);
         });
