@@ -21,7 +21,10 @@
                                 placeholder="nama@email.com" required autofocus>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label fw-semibold small">Kata Sandi</label>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label fw-semibold small mb-1">Kata Sandi</label>
+                                <a href="<?= base_url('lupa-password') ?>" class="small text-decoration-none fw-semibold">Lupa Kata Sandi?</a>
+                            </div>
                             <input type="password" name="password" class="form-control"
                                 placeholder="Masukkan kata sandi" required>
                         </div>

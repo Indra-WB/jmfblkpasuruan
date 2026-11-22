@@ -18,6 +18,8 @@ $routes->get('media/logo/(:segment)', 'Home::logo/$1');
 // Auth Routes
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attemptLogin');
+$routes->get('lupa-password', 'Auth::lupaPassword');
+$routes->post('lupa-password', 'Auth::attemptLupaPassword');
 $routes->get('daftar', 'Auth::daftar');
 $routes->post('daftar', 'Auth::attemptDaftar');
 $routes->get('logout', 'Auth::logout');

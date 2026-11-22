@@ -141,6 +141,138 @@ class Auth extends BaseController
         return redirect()->to('/login')->with('success', 'Anda telah keluar dari sistem.');
     }
 
+    public function lupaPassword()
+    {
+        if (session()->get('logged_in')) {
+            return $this->redirectByRole(session()->get('role'));
+        }
+
+        $email = trim((string) ($this->request->getGet('email') ?: old('email')));
+        $detectedRole = null;
+
+        if ($email !== '') {
+            $user = $this->db->table('users')
+                ->where('email', $email)
+                ->whereIn('role', ['pencaker', 'perusahaan'])
+                ->get()
+                ->getRowArray();
+
+            if ($user) {
+                $detectedRole = $user['role'];
+            }
+        }
+
+        return $this->renderView('publik/lupa_password', [
+            'title'        => 'Lupa Kata Sandi',
+            'email'        => $email,
+            'detectedRole' => $detectedRole,
+        ]);
+    }
+
+    private function normalizePhone(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone);
+        if (str_starts_with($digits, '62')) {
+            return '0' . substr($digits, 2);
+        }
+        if (str_starts_with($digits, '8')) {
+            return '0' . $digits;
+        }
+        return $digits;
+    }
+
+    public function attemptLupaPassword()
+    {
+        $step  = (string) $this->request->getPost('step');
+        $email = trim((string) $this->request->getPost('email'));
+
+        $user = $this->db->table('users')
+            ->where('email', $email)
+            ->whereIn('role', ['pencaker', 'perusahaan'])
+            ->get()
+            ->getRowArray();
+
+        if (! $user) {
+            return redirect()->to('/lupa-password')
+                ->withInput()
+                ->with('error', 'Alamat email tidak ditemukan atau tidak terdaftar sebagai Pencari Kerja / Perusahaan.');
+        }
+
+        if (empty($user['is_active'])) {
+            return redirect()->to('/lupa-password')
+                ->withInput()
+                ->with('error', 'Akun Anda sedang dinonaktifkan oleh Administrator.');
+        }
+
+        // Step 1: Just detect role and show verification fields
+        if ($step === 'cek_email') {
+            return redirect()->to('/lupa-password?email=' . urlencode($email));
+        }
+
+        // Step 2: Verify identity and update password
+        $passwordBaru = (string) $this->request->getPost('password_baru');
+        $konfirmasi   = (string) $this->request->getPost('konfirmasi_password');
+        $hpInput      = $this->normalizePhone((string) $this->request->getPost('hp'));
+
+        if (strlen($passwordBaru) < 6) {
+            return redirect()->to('/lupa-password?email=' . urlencode($email))
+                ->withInput()
+                ->with('error', 'Kata sandi baru minimal 6 karakter.');
+        }
+
+        if ($passwordBaru !== $konfirmasi) {
+            return redirect()->to('/lupa-password?email=' . urlencode($email))
+                ->withInput()
+                ->with('error', 'Konfirmasi kata sandi baru tidak cocok.');
+        }
+
+        if ($user['role'] === 'pencaker') {
+            $nikInput = trim((string) $this->request->getPost('nik'));
+            $pck = $this->db->table('pencaker')->where('user_id', $user['id'])->get()->getRowArray();
+
+            if (
+                ! $pck ||
+                $nikInput === '' ||
+                $hpInput === '' ||
+                $nikInput !== trim((string) $pck['nik']) ||
+                $hpInput !== $this->normalizePhone((string) $pck['hp'])
+            ) {
+                return redirect()->to('/lupa-password?email=' . urlencode($email))
+                    ->withInput()
+                    ->with('error', 'Verifikasi gagal. NIK atau Nomor HP tidak sesuai dengan data akun Anda.');
+            }
+        } elseif ($user['role'] === 'perusahaan') {
+            $boothInput = strtoupper(trim((string) $this->request->getPost('no_booth')));
+            $comp = $this->db->table('perusahaan')->where('user_id', $user['id'])->get()->getRowArray();
+
+            $epBuilder = $this->db->table('event_perusahaan')->where('perusahaan_id', $comp['id'] ?? 0);
+            if ($this->activeEvent) {
+                $epBuilder->where('event_id', $this->activeEvent['id']);
+            }
+            $ep = $epBuilder->get()->getRowArray();
+
+            $hpHrdDb  = $this->normalizePhone((string) ($comp['hp_hrd'] ?? ''));
+            $telpDb   = $this->normalizePhone((string) ($comp['telp'] ?? ''));
+            $boothDb  = strtoupper(trim((string) ($ep['no_booth'] ?? '')));
+
+            $hpMatch = $hpInput !== '' && ($hpInput === $hpHrdDb || $hpInput === $telpDb);
+            $boothMatch = $boothInput !== '' && $boothInput === $boothDb;
+
+            if (! $comp || ! $boothMatch || ! $hpMatch) {
+                return redirect()->to('/lupa-password?email=' . urlencode($email))
+                    ->withInput()
+                    ->with('error', 'Verifikasi gagal. Nomor Booth atau Nomor HP tidak sesuai dengan data perusahaan Anda.');
+            }
+        }
+
+        $this->db->table('users')->where('id', $user['id'])->update([
+            'password'   => password_hash($passwordBaru, PASSWORD_DEFAULT),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return redirect()->to('/login')->with('success', 'Kata sandi berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda.');
+    }
+
     private function redirectByRole(string $role)
     {
         return match ($role) {
