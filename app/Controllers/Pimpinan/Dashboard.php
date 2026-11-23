@@ -71,17 +71,17 @@ class Dashboard extends BaseController
 
         $perPerusahaan = $this->db->query("
             SELECT p.nama AS nama_perusahaan, ep.no_booth,
-                   COUNT(DISTINCT l.id) AS jml_lowongan,
-                   COALESCE(SUM(DISTINCT l.kuota), 0) AS total_kuota,
-                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 THEN 1 ELSE 0 END), 0) AS total_pelamar,
-                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'LolosBerkas' THEN 1 ELSE 0 END), 0) AS lolos_berkas,
-                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'PanggilTes' THEN 1 ELSE 0 END), 0) AS panggil_tes,
-                   COALESCE(SUM(CASE WHEN u_pck.is_active = 1 AND lam.status = 'Diterima' THEN 1 ELSE 0 END), 0) AS diterima
+                   (SELECT COUNT(l2.id) FROM lowongan l2 WHERE l2.event_perusahaan_id = ep.id AND l2.is_active = 1) AS jml_lowongan,
+                   (SELECT COALESCE(SUM(l2.kuota), 0) FROM lowongan l2 WHERE l2.event_perusahaan_id = ep.id AND l2.is_active = 1) AS total_kuota,
+                   COALESCE(SUM(CASE WHEN l.id IS NOT NULL AND u_pck.is_active = 1 THEN 1 ELSE 0 END), 0) AS total_pelamar,
+                   COALESCE(SUM(CASE WHEN l.id IS NOT NULL AND u_pck.is_active = 1 AND lam.status = 'LolosBerkas' THEN 1 ELSE 0 END), 0) AS lolos_berkas,
+                   COALESCE(SUM(CASE WHEN l.id IS NOT NULL AND u_pck.is_active = 1 AND lam.status = 'PanggilTes' THEN 1 ELSE 0 END), 0) AS panggil_tes,
+                   COALESCE(SUM(CASE WHEN l.id IS NOT NULL AND u_pck.is_active = 1 AND lam.status = 'Diterima' THEN 1 ELSE 0 END), 0) AS diterima
             FROM event_perusahaan ep
             JOIN perusahaan p ON p.id = ep.perusahaan_id
             JOIN users u_comp ON u_comp.id = p.user_id
-            LEFT JOIN lowongan l ON l.event_perusahaan_id = ep.id AND l.is_active = 1
-            LEFT JOIN lamaran lam ON lam.lowongan_id = l.id
+            LEFT JOIN lamaran lam ON lam.event_perusahaan_id = ep.id
+            LEFT JOIN lowongan l ON l.id = lam.lowongan_id AND l.is_active = 1
             LEFT JOIN event_peserta eps ON eps.id = lam.event_peserta_id
             LEFT JOIN pencaker pck ON pck.id = eps.pencaker_id
             LEFT JOIN users u_pck ON u_pck.id = pck.user_id

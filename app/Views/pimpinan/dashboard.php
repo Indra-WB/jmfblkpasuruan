@@ -116,8 +116,24 @@
                         <th class="text-center table-success">Diterima Kerja</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tbPerPerusahaan">
+                    <?php
+                        $totLowongan = 0;
+                        $totKuota    = 0;
+                        $totPelamar  = 0;
+                        $totLolos    = 0;
+                        $totPanggil  = 0;
+                        $totDiterima = 0;
+                    ?>
                     <?php foreach ($stats['perPerusahaan'] ?? [] as $pr): ?>
+                        <?php
+                            $totLowongan += (int) $pr['jml_lowongan'];
+                            $totKuota    += (int) $pr['total_kuota'];
+                            $totPelamar  += (int) $pr['total_pelamar'];
+                            $totLolos    += (int) $pr['lolos_berkas'];
+                            $totPanggil  += (int) $pr['panggil_tes'];
+                            $totDiterima += (int) $pr['diterima'];
+                        ?>
                         <tr>
                             <td><span class="badge bg-primary"><?= esc($pr['no_booth']) ?></span></td>
                             <td class="fw-bold"><?= esc($pr['nama_perusahaan']) ?></td>
@@ -130,6 +146,17 @@
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
+                <tfoot class="table-light fw-bold" id="tfPerPerusahaan">
+                    <tr>
+                        <td colspan="2" class="text-end">Total Keseluruhan</td>
+                        <td class="text-center"><?= number_format($totLowongan) ?></td>
+                        <td class="text-center"><?= number_format($totKuota) ?></td>
+                        <td class="text-center text-primary"><?= number_format($totPelamar) ?></td>
+                        <td class="text-center"><?= number_format($totLolos) ?></td>
+                        <td class="text-center"><?= number_format($totPanggil) ?></td>
+                        <td class="text-center text-success table-success"><?= number_format($totDiterima) ?></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
@@ -215,6 +242,45 @@
 
             chartPelamarDiterima.data.datasets[0].data = [s.totalLamaran, s.totalDiterima];
             chartPelamarDiterima.update();
+
+            if (s.perPerusahaan && $('#tbPerPerusahaan').length) {
+                let tbody = '';
+                let totLow = 0, totKuo = 0, totPel = 0, totLol = 0, totPan = 0, totDit = 0;
+                s.perPerusahaan.forEach(function (pr) {
+                    const low = Number(pr.jml_lowongan || 0);
+                    const kuo = Number(pr.total_kuota || 0);
+                    const pel = Number(pr.total_pelamar || 0);
+                    const lol = Number(pr.lolos_berkas || 0);
+                    const pan = Number(pr.panggil_tes || 0);
+                    const dit = Number(pr.diterima || 0);
+
+                    totLow += low; totKuo += kuo; totPel += pel; totLol += lol; totPan += pan; totDit += dit;
+
+                    const booth = $('<div>').text(pr.no_booth || '').html();
+                    const nama = $('<div>').text(pr.nama_perusahaan || '').html();
+
+                    tbody += `<tr>
+                        <td><span class="badge bg-primary">${booth}</span></td>
+                        <td class="fw-bold">${nama}</td>
+                        <td class="text-center">${low}</td>
+                        <td class="text-center">${kuo}</td>
+                        <td class="text-center fw-bold text-primary">${pel}</td>
+                        <td class="text-center">${lol}</td>
+                        <td class="text-center">${pan}</td>
+                        <td class="text-center fw-bold text-success table-success">${dit}</td>
+                    </tr>`;
+                });
+                $('#tbPerPerusahaan').html(tbody);
+                $('#tfPerPerusahaan').html(`<tr>
+                    <td colspan="2" class="text-end">Total Keseluruhan</td>
+                    <td class="text-center">${totLow.toLocaleString('id-ID')}</td>
+                    <td class="text-center">${totKuo.toLocaleString('id-ID')}</td>
+                    <td class="text-center text-primary">${totPel.toLocaleString('id-ID')}</td>
+                    <td class="text-center">${totLol.toLocaleString('id-ID')}</td>
+                    <td class="text-center">${totPan.toLocaleString('id-ID')}</td>
+                    <td class="text-center text-success table-success">${totDit.toLocaleString('id-ID')}</td>
+                </tr>`);
+            }
         });
     }, 15000);
 </script>
