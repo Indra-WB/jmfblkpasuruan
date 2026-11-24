@@ -109,6 +109,7 @@ $routes->group('admin', ['filter' => 'auth:admin'], static function ($routes) {
     $routes->post('lowongan/toggle/(:num)', 'Admin\Panel::toggleLowongan/$1');
 
     $routes->get('pencaker', 'Admin\Panel::pencaker');
+    $routes->get('pencaker/excel', 'Admin\Panel::exportPencakerExcel');
     $routes->get('pencaker/detail/(:num)', 'Admin\Panel::detailPencaker/$1');
     $routes->post('pencaker/reset-password/(:num)', 'Admin\Panel::resetPasswordPencaker/$1');
     $routes->post('pencaker/toggle/(:num)', 'Admin\Panel::toggleUser/$1');

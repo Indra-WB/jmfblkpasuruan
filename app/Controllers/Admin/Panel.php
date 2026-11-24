@@ -4,6 +4,8 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Libraries\JmfService;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class Panel extends BaseController
 {
@@ -480,6 +482,102 @@ class Panel extends BaseController
             'title'    => 'Data Pencari Kerja & Peserta Event',
             'pencaker' => $list,
         ]);
+    }
+
+    public function exportPencakerExcel()
+    {
+        $event = $this->activeEvent;
+        $rows = $this->db->query("
+            SELECT pck.*, u.email, u.is_active, k.nama AS nama_kecamatan, d.nama AS nama_desa,
+                   ep.no_registrasi, ep.checkin_at, s.nama AS nama_sesi
+            FROM pencaker pck
+            JOIN users u ON u.id = pck.user_id
+            LEFT JOIN desa d ON d.id = pck.desa_id
+            LEFT JOIN kecamatan k ON k.id = d.kecamatan_id
+            LEFT JOIN event_peserta ep ON ep.pencaker_id = pck.id AND ep.event_id = ?
+            LEFT JOIN event_sesi s ON s.id = ep.sesi_id
+            WHERE u.is_active = 1
+            ORDER BY pck.id ASC
+        ", [$event['id'] ?? 0])->getResultArray();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Data Pencari Kerja');
+
+        $sheet->setCellValue('A1', 'DATA PENCARI KERJA TERDAFTAR - ' . strtoupper($event['nama'] ?? 'JOB MARKET FAIR UPT BLK PASURUAN'));
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+
+        $headers = [
+            'No',
+            'No. Registrasi Event',
+            'Sesi Kedatangan',
+            'Status Kehadiran',
+            'Waktu Check-in',
+            'NIK',
+            'Nama Lengkap',
+            'L/P',
+            'Tempat Lahir',
+            'Tgl Lahir',
+            'Pendidikan',
+            'Jurusan',
+            'Domisili',
+            'Alamat Lengkap',
+            'No. HP/WA',
+            'Email',
+            'Disabilitas',
+            'Link Berkas PDF',
+        ];
+        $col = 'A';
+        foreach ($headers as $h) {
+            $sheet->setCellValue($col . '3', $h);
+            $sheet->getStyle($col . '3')->getFont()->setBold(true);
+            $col++;
+        }
+
+        $rowNum = 4;
+        foreach ($rows as $idx => $r) {
+            $dom = $r['domisili'] === 'kab_pasuruan'
+                ? trim(($r['nama_desa'] ?? '') . ', Kec. ' . ($r['nama_kecamatan'] ?? '') . ', Kab. Pasuruan', ', ')
+                : ($r['kota_luar'] ?? '-');
+
+            $statusHadir = ! empty($r['no_registrasi'])
+                ? (! empty($r['checkin_at']) ? 'Hadir Check-in' : 'Belum Check-in')
+                : 'Belum Daftar Event';
+
+            $sheet->setCellValue('A' . $rowNum, $idx + 1);
+            $sheet->setCellValue('B' . $rowNum, $r['no_registrasi'] ?: '-');
+            $sheet->setCellValue('C' . $rowNum, ! empty($r['no_registrasi']) ? ($r['nama_sesi'] ?: 'Bebas') : '-');
+            $sheet->setCellValue('D' . $rowNum, $statusHadir);
+            $sheet->setCellValue('E' . $rowNum, $r['checkin_at'] ?: '-');
+            $sheet->setCellValueExplicit('F' . $rowNum, (string) $r['nik'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('G' . $rowNum, $r['nama']);
+            $sheet->setCellValue('H' . $rowNum, $r['jk']);
+            $sheet->setCellValue('I' . $rowNum, $r['tempat_lahir'] ?: '-');
+            $sheet->setCellValue('J' . $rowNum, $r['tgl_lahir'] ?: '-');
+            $sheet->setCellValue('K' . $rowNum, $r['pendidikan']);
+            $sheet->setCellValue('L' . $rowNum, $r['jurusan'] ?: '-');
+            $sheet->setCellValue('M' . $rowNum, $dom);
+            $sheet->setCellValue('N' . $rowNum, $r['alamat'] ?: '-');
+            $sheet->setCellValueExplicit('O' . $rowNum, (string) $r['hp'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('P' . $rowNum, $r['email']);
+            $sheet->setCellValue('Q' . $rowNum, $r['disabilitas'] ? ('Ya (' . ($r['jenis_disabilitas'] ?: '-') . ')') : 'Tidak');
+            $sheet->setCellValue('R' . $rowNum, $r['link_berkas'] ?: '-');
+            $rowNum++;
+        }
+
+        foreach (range('A', 'R') as $c) {
+            $sheet->getColumnDimension($c)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $excelOutput = ob_get_clean();
+
+        return $this->response
+            ->setContentType('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->setHeader('Content-Disposition', 'attachment; filename="Data-Pencari-Kerja-JMF-BLK-Pasuruan.xlsx"')
+            ->setBody($excelOutput);
     }
 
     public function resetPasswordPencaker(int $userId)
